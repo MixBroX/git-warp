@@ -10,7 +10,9 @@ import {
   Terminal,
   ShieldCheck,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Upload,
+  FileText
 } from 'lucide-react';
 
 interface CommitNode {
@@ -24,7 +26,7 @@ interface CommitNode {
   conflict?: boolean;
 }
 
-const INITIAL_COMMITS: CommitNode[] = [
+const DEFAULT_COMMITS: CommitNode[] = [
   { id: 'c1', hash: 'a1b2c3d', message: 'Initial commit: setup base architecture', author: 'Alex', branch: 'main', x: 15, y: 30 },
   { id: 'c2', hash: 'e4f5g6h', message: 'Add authentication middleware', author: 'Sarah', branch: 'main', x: 45, y: 30 },
   { id: 'c3', hash: '7j8k9l0', message: 'Refactor database connection pool', author: 'Alex', branch: 'main', x: 75, y: 30 },
@@ -33,17 +35,68 @@ const INITIAL_COMMITS: CommitNode[] = [
 ];
 
 export default function App() {
-  const [commits, setCommits] = useState<CommitNode[]>(INITIAL_COMMITS);
-  const [selectedCommit, setSelectedCommit] = useState<CommitNode>(INITIAL_COMMITS[4]);
-  const [activeTab, setActiveTab] = useState<'visualizer' | 'conflict' | 'docs'>('visualizer');
+  const [commits, setCommits] = useState<CommitNode[]>(DEFAULT_COMMITS);
+  const [selectedCommit, setSelectedCommit] = useState<CommitNode>(DEFAULT_COMMITS[4]);
+  const [activeTab, setActiveTab] = useState<'visualizer' | 'conflict' | 'docs' | 'import'>('visualizer');
   const [copied, setCopied] = useState(false);
   const [simulatedTime, setSimulatedTime] = useState<number>(100);
   const [conflictResolved, setConflictResolved] = useState(false);
+  
+  // Import state
+  const [rawLogInput, setRawLogInput] = useState('');
+  const [importError, setImportError] = useState('');
 
   const handleCopyCommand = (cmd: string) => {
     navigator.clipboard.writeText(cmd);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Parse git log text input
+  const handleParseGitLog = () => {
+    if (!rawLogInput.trim()) {
+      setImportError('Please paste a valid git log output.');
+      return;
+    }
+
+    try {
+      const lines = rawLogInput.split('\n').filter(l => l.trim().length > 0);
+      const parsedCommits: CommitNode[] = [];
+      
+      lines.forEach((line, index) => {
+        // Simple heuristic to extract hash and message from git log --oneline
+        const cleanLine = line.replace(/^[|\*\/\-\s]+/, ''); // remove graph symbols
+        const parts = cleanLine.split(' ');
+        const hash = parts[0] && parts[0].length >= 7 ? parts[0] : Math.random().toString(36).substring(2, 9);
+        const message = parts.slice(1).join(' ') || 'Commit update';
+        
+        const isBranchB = line.includes('feature') || line.includes('fix') || index % 2 !== 0;
+        const xPos = Math.min(15 + (index * 20), 85);
+        const yPos = isBranchB ? 75 : 30;
+
+        parsedCommits.push({
+          id: `imported-${index}`,
+          hash: hash.substring(0, 7),
+          message: message,
+          author: 'Developer',
+          branch: isBranchB ? 'feature/branch' : 'main',
+          x: xPos,
+          y: yPos,
+          conflict: index === lines.length - 1 && lines.length > 2
+        });
+      });
+
+      if (parsedCommits.length > 0) {
+        setCommits(parsedCommits);
+        setSelectedCommit(parsedCommits[0]);
+        setActiveTab('visualizer');
+        setImportError('');
+      } else {
+        setImportError('Could not parse any commits. Ensure you use `git log --oneline` format.');
+      }
+    } catch (err) {
+      setImportError('Failed to parse input. Check format.');
+    }
   };
 
   return (
@@ -55,11 +108,8 @@ export default function App() {
             GT
           </div>
           <div>
-            <h1 className="font-semibold text-sm tracking-tight flex items-center gap-2.5">
+            <h1 className="font-semibold text-sm tracking-tight">
               Git Time-Machine & Conflict Visualizer
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E1F3FE] text-[#1F6C9F] uppercase font-semibold border border-[#1F6C9F]/20">
-                v1.0 Production
-              </span>
             </h1>
             <p className="text-xs text-[#787774] mt-0.5">Frictionless client-side Git history topology & interactive merge conflict resolver</p>
           </div>
@@ -72,6 +122,13 @@ export default function App() {
               className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'visualizer' ? 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold' : 'text-[#787774] hover:text-[#111111]'}`}
             >
               Time-Machine Graph
+            </button>
+            <button 
+              onClick={() => setActiveTab('import')}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'import' ? 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold' : 'text-[#787774] hover:text-[#111111]'}`}
+            >
+              <Upload className="w-3.5 h-3.5 text-[#1F6C9F]" />
+              Import My Repo
             </button>
             <button 
               onClick={() => setActiveTab('conflict')}
@@ -111,21 +168,20 @@ export default function App() {
                   <GitBranch className="w-4 h-4 text-[#787774]" />
                   <h2 className="text-sm font-semibold">Repository Branch Topology & History</h2>
                 </div>
-                <div className="flex items-center gap-3 text-xs font-mono text-[#787774]">
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#346538]"></span> main</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#1F6C9F]"></span> feature/stripe</span>
-                </div>
+                <button 
+                  onClick={() => setActiveTab('import')}
+                  className="text-xs font-mono text-[#1F6C9F] hover:underline flex items-center gap-1"
+                >
+                  <Upload className="w-3 h-3" /> Load custom git log
+                </button>
               </div>
 
               {/* Simulated Git Graph Canvas Area */}
               <div className="flex-1 bg-[#FBFBFA] border border-[#EAEAEA] rounded-lg relative min-h-[420px] p-6 flex items-center justify-center overflow-hidden">
                 {/* SVG Connecting Lines */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '420px' }}>
-                  {/* Main branch line */}
                   <line x1="15%" y1="30%" x2="45%" y2="30%" stroke="#346538" strokeWidth="2.5" strokeDasharray="3" />
                   <line x1="45%" y1="30%" x2="75%" y2="30%" stroke="#346538" strokeWidth="2.5" />
-                  
-                  {/* Feature branch fork & merge path */}
                   <path d="M 45 126 C 45 200, 45 220, 75 315" fill="none" stroke="#1F6C9F" strokeWidth="2.5" strokeDasharray="3" />
                   <line x1="45%" y1="75%" x2="75%" y2="75%" stroke="#1F6C9F" strokeWidth="2.5" />
                 </svg>
@@ -133,7 +189,7 @@ export default function App() {
                 {/* Commit Nodes */}
                 <div className="absolute inset-0 p-6">
                   {commits.map((c) => {
-                    const isSelected = selectedCommit.id === c.id;
+                    const isSelected = selectedCommit?.id === c.id;
                     return (
                       <button
                         key={c.id}
@@ -195,36 +251,34 @@ export default function App() {
                     Commit Inspector
                   </h3>
                   <span className="font-mono text-xs px-2.5 py-1 rounded bg-[#F7F6F3] border border-[#EAEAEA] font-semibold">
-                    {selectedCommit.hash}
+                    {selectedCommit?.hash || '-------'}
                   </span>
                 </div>
 
                 <div className="mt-5 space-y-5">
                   <div>
                     <label className="text-[11px] font-mono text-[#787774] uppercase tracking-wider block mb-1">Commit Message</label>
-                    <p className="text-sm font-medium leading-snug">{selectedCommit.message}</p>
+                    <p className="text-sm font-medium leading-snug">{selectedCommit?.message || 'Select a commit'}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 bg-[#F9F9F8] p-3.5 rounded-lg border border-[#EAEAEA]">
                     <div>
                       <label className="text-[10px] font-mono text-[#787774] uppercase tracking-wider block">Author</label>
-                      <p className="text-xs font-semibold mt-0.5">{selectedCommit.author}</p>
+                      <p className="text-xs font-semibold mt-0.5">{selectedCommit?.author || 'N/A'}</p>
                     </div>
                     <div>
                       <label className="text-[10px] font-mono text-[#787774] uppercase tracking-wider block">Target Branch</label>
-                      <p className="text-xs font-mono font-semibold mt-0.5 text-[#1F6C9F]">{selectedCommit.branch}</p>
+                      <p className="text-xs font-mono font-semibold mt-0.5 text-[#1F6C9F]">{selectedCommit?.branch || 'N/A'}</p>
                     </div>
                   </div>
 
                   <div>
                     <label className="text-[11px] font-mono text-[#787774] uppercase tracking-wider mb-2 block">Simulated Diff Snapshot</label>
                     <div className="bg-[#111111] text-[#FFFFFF] p-4 rounded-lg font-mono text-xs overflow-x-auto space-y-1 shadow-inner">
-                      <p className="text-[#787774]"># file: src/payments/stripe.ts</p>
-                      <p className="text-[#346538]">+ export async function createCheckoutSession() &#123;</p>
-                      <p className="text-[#346538]">+   const stripe = new Stripe(process.env.STRIPE_KEY);</p>
-                      <p className="text-[#9F2F2D]">-   // TODO: implement stripe later</p>
-                      <p className="text-[#346538]">+   return await stripe.checkout.sessions.create(&#123; ... &#125;);</p>
-                      <p className="text-[#346538]">+ &#125;</p>
+                      <p className="text-[#787774]"># file: modified snapshot</p>
+                      <p className="text-[#346538]">+ commit {selectedCommit?.hash}</p>
+                      <p className="text-[#346538]">+ author: {selectedCommit?.author}</p>
+                      <p className="text-[#787774]">... changes applied locally ...</p>
                     </div>
                   </div>
                 </div>
@@ -232,13 +286,52 @@ export default function App() {
 
               <div className="pt-6 border-t border-[#EAEAEA] mt-6">
                 <button 
-                  onClick={() => handleCopyCommand(`git checkout ${selectedCommit.hash}`)}
+                  onClick={() => handleCopyCommand(`git checkout ${selectedCommit?.hash}`)}
                   className="w-full py-2.5 px-4 rounded-lg bg-[#111111] text-[#FFFFFF] text-xs font-medium hover:bg-[#333333] transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-[#346538]" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Command Copied to Clipboard!' : `Copy git checkout ${selectedCommit.hash}`}
+                  {copied ? 'Command Copied to Clipboard!' : `Copy git checkout ${selectedCommit?.hash}`}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'import' && (
+          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-2xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6">
+            <div className="pb-4 border-b border-[#EAEAEA]">
+              <h2 className="text-base font-semibold flex items-center gap-2">
+                <Upload className="w-5 h-5 text-[#1F6C9F]" />
+                Import Your Own Repository Logs
+              </h2>
+              <p className="text-xs text-[#787774] mt-1">
+                Run <code className="bg-[#F7F6F3] px-1.5 py-0.5 rounded border border-[#EAEAEA]">git log --oneline --all -n 20</code> in your terminal, paste the output below, and visualize your repo instantly.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-mono text-[#787774] uppercase tracking-wider block mb-2">Paste Git Log Output:</label>
+                <textarea 
+                  rows={8}
+                  value={rawLogInput}
+                  onChange={(e) => setRawLogInput(e.target.value)}
+                  placeholder="e.g.&#10;a1b2c3d Fix login button bug on mobile&#10;e4f5g6h Add stripe webhook integration&#10;7j8k9l0 Initial release setup"
+                  className="w-full p-4 rounded-xl border border-[#EAEAEA] bg-[#FBFBFA] font-mono text-xs focus:outline-none focus:border-[#111111] transition-colors"
+                />
+              </div>
+
+              {importError && (
+                <p className="text-xs text-[#9F2F2D] font-medium">{importError}</p>
+              )}
+
+              <button 
+                onClick={handleParseGitLog}
+                className="w-full py-3 px-4 rounded-xl bg-[#111111] text-[#FFFFFF] text-xs font-medium hover:bg-[#333333] transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <FileText className="w-4 h-4" />
+                Generate Interactive Topology Graph
+              </button>
             </div>
           </div>
         )}
