@@ -466,12 +466,12 @@ export default function App() {
 
               {conflictResolved && (
                 <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded-lg font-mono text-xs flex items-center justify-between">
-                  <span>git add . &amp;&amp; git commit -m "fix: resolve merge conflict with stripe gateway"</span>
+                  <span>git add . ; git commit -m "fix: resolve merge conflict with stripe gateway"</span>
                   <button 
-                    onClick={() => handleCopyCommand('git add . && git commit -m "fix: resolve merge conflict with stripe gateway"')}
+                    onClick={() => handleCopyCommand('git add . ; git commit -m "fix: resolve merge conflict with stripe gateway"')}
                     className="bg-[#333333] hover:bg-[#444444] text-[#FFFFFF] px-2.5 py-1 rounded text-[10px] transition-colors flex items-center gap-1"
                   >
-                    <Copy className="w-3 h-3" /> Copy
+                    {copied ? <><Check className="w-3 h-3 text-[#A8D5BA]" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                 </div>
               )}
