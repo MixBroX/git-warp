@@ -47,9 +47,11 @@ export default function App() {
   // Theme state: default dark theme
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  // Tour / Onboarding state (steps 0 to 3)
-  const [showTour, setShowTour] = useState(false);
-  const [tourStep, setTourStep] = useState(0);
+  // Simulated Git Graph Canvas Interaction state (zoom & pan)
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // Import state
   const [rawLogInput, setRawLogInput] = useState('');
@@ -333,65 +335,123 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Simulated Git Graph Canvas Area */}
-              <div className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[420px] p-6 flex items-center justify-center overflow-hidden`}>
-                {/* SVG Connecting Lines between visible commits */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '420px' }}>
-                  {visibleCommits.map((c, i) => {
-                    if (i === 0) return null;
-                    const prev = visibleCommits[i - 1];
-                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? (isDark ? '#888888' : '#555555') : (isDark ? '#FFFFFF' : '#111111');
-                    return (
-                      <line 
-                        key={`line-${c.id}`}
-                        x1={`${prev.x}%`} 
-                        y1={`${prev.y}%`} 
-                        x2={`${c.x}%`} 
-                        y2={`${c.y}%`} 
-                        stroke={strokeColor} 
-                        strokeWidth="2.5" 
-                        strokeDasharray={c.branch !== prev.branch ? "4" : undefined}
-                      />
-                    );
-                  })}
-                  {/* Branch branch connector if both main and feature exist */}
-                  {visibleCommits.some(c => c.y === 75) && visibleCommits.some(c => c.y === 35 && c.x === 42) && (
-                    <path 
-                      d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
-                      fill="none" 
-                      stroke={isDark ? '#888888' : '#555555'} 
-                      strokeWidth="2.5" 
-                      strokeDasharray="4" 
-                    />
-                  )}
-                </svg>
+              {/* Simulated Git Graph Canvas Area (Interactive Zoom & Pan) */}
+              <div 
+                className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[420px] overflow-hidden cursor-grab active:cursor-grabbing select-none`}
+                onMouseDown={(e) => {
+                  setIsDragging(true);
+                  setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+                }}
+                onMouseMove={(e) => {
+                  if (!isDragging) return;
+                  setPanOffset({
+                    x: e.clientX - dragStart.x,
+                    y: e.clientY - dragStart.y
+                  });
+                }}
+                onMouseUp={() => setIsDragging(false)}
+                onMouseLeave={() => setIsDragging(false)}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  const delta = e.deltaY < 0 ? 0.1 : -0.1;
+                  setZoomLevel(prev => Math.min(Math.max(0.6, prev + delta), 2.5));
+                }}
+              >
+                {/* Floating Zoom & Pan Controls */}
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-[#000000]/80 backdrop-blur-xs p-1 rounded-lg border border-[#333333] shadow-lg text-[11px] font-mono text-[#EAEAEA]">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setZoomLevel(prev => Math.min(2.5, prev + 0.2)); }}
+                    className="px-2 py-1 hover:bg-[#333333] rounded transition-colors"
+                    title="Zoom In"
+                  >
+                    +
+                  </button>
+                  <span className="px-1 text-[#999999]">{Math.round(zoomLevel * 100)}%</span>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setZoomLevel(prev => Math.max(0.6, prev - 0.2)); }}
+                    className="px-2 py-1 hover:bg-[#333333] rounded transition-colors"
+                    title="Zoom Out"
+                  >
+                    -
+                  </button>
+                  <div className="w-[1px] h-4 bg-[#333333] mx-0.5" />
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setZoomLevel(1); setPanOffset({ x: 0, y: 0 }); }}
+                    className="px-2 py-1 hover:bg-[#333333] rounded transition-colors text-[10px]"
+                    title="Reset View"
+                  >
+                    Reset
+                  </button>
+                </div>
 
-                {/* Commit Nodes */}
-                <div className="absolute inset-0 p-6">
-                  {visibleCommits.map((c) => {
-                    const isSelected = selectedCommit?.id === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => setSelectedCommit(c)}
-                        style={{ left: `${c.x}%`, top: `${c.y}%` }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110 focus:outline-none z-10"
-                      >
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all ${
-                          isSelected 
-                            ? (isDark ? 'bg-[#FFFFFF] border-[#FFFFFF] text-[#111111] ring-4 ring-[#FFFFFF]/10' : 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/10')
-                            : c.conflict 
-                              ? (isDark ? 'bg-[#3A1D1D] border-[#EF4444] text-[#EF4444]' : 'bg-[#FDF3F2] border-[#EF4444] text-[#EF4444]') 
-                              : (isDark ? 'bg-[#222222] border-[#555555] text-[#EAEAEA] hover:border-[#FFFFFF]' : 'bg-[#FFFFFF] border-[#D0D0CD] text-[#111111] hover:border-[#111111]')
-                        }`}>
-                          {c.conflict ? <AlertTriangle className="w-4 h-4" /> : <GitCommit className="w-4 h-4" />}
-                        </div>
-                        <div className={`absolute top-10 ${cardBg} border px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 group-hover:opacity-100`}>
-                          {c.hash} ({c.branch})
-                        </div>
-                      </button>
-                    );
-                  })}
+                {/* Transformable Graph Container */}
+                <div 
+                  className="absolute inset-0 transition-transform duration-75 ease-out p-6 flex items-center justify-center"
+                  style={{
+                    transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
+                    transformOrigin: 'center center'
+                  }}
+                >
+                  <div className="relative w-full h-full min-w-[600px] min-h-[400px] flex items-center justify-center">
+                    {/* SVG Connecting Lines between visible commits */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '400px' }}>
+                      {visibleCommits.map((c, i) => {
+                        if (i === 0) return null;
+                        const prev = visibleCommits[i - 1];
+                        const strokeColor = c.branch.includes('stripe') || c.y === 75 ? (isDark ? '#888888' : '#555555') : (isDark ? '#FFFFFF' : '#111111');
+                        return (
+                          <line 
+                            key={`line-${c.id}`}
+                            x1={`${prev.x}%`} 
+                            y1={`${prev.y}%`} 
+                            x2={`${c.x}%`} 
+                            y2={`${c.y}%`} 
+                            stroke={strokeColor} 
+                            strokeWidth="2.5" 
+                            strokeDasharray={c.branch !== prev.branch ? "4" : undefined}
+                          />
+                        );
+                      })}
+                      {/* Branch branch connector if both main and feature exist */}
+                      {visibleCommits.some(c => c.y === 75) && visibleCommits.some(c => c.y === 35 && c.x === 42) && (
+                        <path 
+                          d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
+                          fill="none" 
+                          stroke={isDark ? '#888888' : '#555555'} 
+                          strokeWidth="2.5" 
+                          strokeDasharray="4" 
+                        />
+                      )}
+                    </svg>
+
+                    {/* Commit Nodes */}
+                    <div className="absolute inset-0 p-6">
+                      {visibleCommits.map((c) => {
+                        const isSelected = selectedCommit?.id === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={(e) => { e.stopPropagation(); setSelectedCommit(c); }}
+                            style={{ left: `${c.x}%`, top: `${c.y}%` }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110 focus:outline-none z-10"
+                          >
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all ${
+                              isSelected 
+                                ? (isDark ? 'bg-[#FFFFFF] border-[#FFFFFF] text-[#111111] ring-4 ring-[#FFFFFF]/10' : 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/10')
+                                : c.conflict 
+                                  ? (isDark ? 'bg-[#3A1D1D] border-[#EF4444] text-[#EF4444]' : 'bg-[#FDF3F2] border-[#EF4444] text-[#EF4444]') 
+                                  : (isDark ? 'bg-[#222222] border-[#555555] text-[#EAEAEA] hover:border-[#FFFFFF]' : 'bg-[#FFFFFF] border-[#D0D0CD] text-[#111111] hover:border-[#111111]')
+                            }`}>
+                              {c.conflict ? <AlertTriangle className="w-4 h-4" /> : <GitCommit className="w-4 h-4" />}
+                            </div>
+                            <div className={`absolute top-10 ${cardBg} border px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 group-hover:opacity-100`}>
+                              {c.hash} ({c.branch})
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
