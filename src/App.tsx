@@ -110,7 +110,8 @@ export default function App() {
         }
         
         const isBranchB = line.toLowerCase().includes('feature') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('branch');
-        const xPos = Math.min(15 + (index * 15), 85);
+        const totalLines = Math.max(lines.length, 1);
+        const xPos = Math.round(10 + (index / Math.max(totalLines - 1, 1)) * 80);
         const yPos = isBranchB ? 75 : 35;
 
         parsedCommits.push({
