@@ -454,13 +454,16 @@ export default function App() {
                     <div>
                       <span className={`${textMuted} block mb-1`}>Simulated Code Diff Snapshot</span>
                       <div className="bg-[#000000] text-[#EAEAEA] p-3 rounded font-mono text-[11px] leading-relaxed overflow-x-auto space-y-1 border border-[#333333]">
-                        <div className="text-[#787774]">// diff for commit {selectedCommit.hash}</div>
-                        <div className="text-[#787774]">// message: {selectedCommit.message}</div>
-                        <div className="text-[#10B981]">+ // applied changes by {selectedCommit.author}</div>
-                        <div className="text-[#10B981]">+ export function handleWarpAction() &#123;</div>
-                        <div className="text-[#10B981]">+   return "{selectedCommit.message.slice(0, 32)}...";</div>
-                        <div className="text-[#10B981]">+ &#125;</div>
-                        <div className="text-[#EF4444]">- const legacyMode = false;</div>
+                        <div className="text-[#787774]">diff --git a/src/index.ts b/src/index.ts</div>
+                        <div className="text-[#787774]">index {selectedCommit.hash}..9f66f93 100644</div>
+                        <div className="text-[#888888]">--- a/src/index.ts</div>
+                        <div className="text-[#888888]">+++ b/src/index.ts</div>
+                        <div className="text-[#666666]">@@ -12,4 +12,6 @@</div>
+                        <div className="text-[#EF4444]">- // author: {selectedCommit.author} (legacy state)</div>
+                        <div className="text-[#EF4444]">- const activeWarp = false;</div>
+                        <div className="text-[#10B981]">+ // commit: {selectedCommit.message}</div>
+                        <div className="text-[#10B981]">+ export const commitHash = "{selectedCommit.hash}";</div>
+                        <div className="text-[#10B981]">+ export const authorName = "{selectedCommit.author}";</div>
                       </div>
                     </div>
                   </div>
