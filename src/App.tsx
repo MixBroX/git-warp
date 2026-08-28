@@ -112,7 +112,7 @@ export default function App() {
     }
   };
 
-  // Theme color variables mapping
+  // Theme color variables mapping (Strict monochrome utilitarian minimalism)
   const isDark = theme === 'dark';
   const bgMain = isDark ? 'bg-[#111111] text-[#EAEAEA]' : 'bg-[#F7F6F3] text-[#111111]';
   const bgHeader = isDark ? 'bg-[#1A1A1A] border-[#333333]' : 'bg-[#FFFFFF] border-[#EAEAEA]';
@@ -122,7 +122,7 @@ export default function App() {
   const borderColor = isDark ? 'border-[#333333]' : 'border-[#EAEAEA]';
 
   return (
-    <div className={`min-h-screen ${bgMain} flex flex-col font-sans selection:bg-[#3B82F6] selection:text-[#FFFFFF] transition-colors`}>
+    <div className={`min-h-screen ${bgMain} flex flex-col font-sans selection:bg-[#FFFFFF] selection:text-[#111111] transition-colors`}>
       {/* Top Editorial Header */}
       <header className={`border-b ${bgHeader} px-8 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm`}>
         <div className="flex items-center space-x-3.5">
@@ -149,7 +149,7 @@ export default function App() {
               onClick={() => setActiveTab('import')}
               className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'import' ? (isDark ? 'bg-[#333333] text-[#FFFFFF] shadow-sm font-semibold' : 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold') : `${textMuted} hover:text-[#FFFFFF]`}`}
             >
-              <Upload className="w-3.5 h-3.5 text-[#3B82F6]" />
+              <Upload className="w-3.5 h-3.5" />
               Import My Repo
             </button>
             <button 
@@ -181,7 +181,7 @@ export default function App() {
             className={`p-2 rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
             title="Toggle Light / Dark Mode"
           >
-            {isDark ? <Sun className="w-4 h-4 text-[#F59E0B]" /> : <Moon className="w-4 h-4 text-[#3B82F6]" />}
+            {isDark ? <Sun className="w-4 h-4 text-[#F59E0B]" /> : <Moon className="w-4 h-4" />}
           </button>
 
           <a 
@@ -196,7 +196,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Interactive Tour Modal (English, 03 steps: 00/03 to 03/03) */}
+      {/* Interactive Tour Modal */}
       {showTour && (
         <div className="fixed inset-0 z-50 bg-[#000000]/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className={`${cardBg} border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200`}>
@@ -276,7 +276,7 @@ export default function App() {
               ) : (
                 <button 
                   onClick={() => setShowTour(false)}
-                  className="px-4 py-1.5 text-xs font-medium rounded-md bg-[#10B981] text-[#FFFFFF] hover:bg-[#059669] transition-colors shadow-sm"
+                  className={`px-4 py-1.5 text-xs font-medium rounded-md ${isDark ? 'bg-[#FFFFFF] text-[#111111]' : 'bg-[#111111] text-[#FFFFFF]'} transition-colors shadow-sm`}
                 >
                   Get Started! 🚀
                 </button>
@@ -289,9 +289,9 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-8 flex flex-col gap-6">
         {activeTab === 'visualizer' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left/Center: Interactive Git Graph Canvas */}
-            <div className={`${cardBg} border rounded-xl p-6 flex flex-col relative shadow-sm`}>
+            <div className={`${cardBg} border rounded-xl p-6 flex flex-col relative shadow-sm lg:col-span-2`}>
               <div className={`flex items-center justify-between mb-5 pb-4 border-b ${borderColor}`}>
                 <div className="flex items-center gap-2">
                   <GitBranch className={`w-4 h-4 ${textMuted}`} />
@@ -299,7 +299,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => setActiveTab('import')}
-                  className="text-xs font-mono text-[#3B82F6] hover:underline flex items-center gap-1"
+                  className={`text-xs font-mono ${isDark ? 'text-[#EAEAEA]' : 'text-[#111111]'} hover:underline flex items-center gap-1`}
                 >
                   <Upload className="w-3 h-3" /> Load custom git log
                 </button>
@@ -312,7 +312,7 @@ export default function App() {
                   {visibleCommits.map((c, i) => {
                     if (i === 0) return null;
                     const prev = visibleCommits[i - 1];
-                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? '#3B82F6' : '#10B981';
+                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? (isDark ? '#888888' : '#555555') : (isDark ? '#FFFFFF' : '#111111');
                     return (
                       <line 
                         key={`line-${c.id}`}
@@ -331,7 +331,7 @@ export default function App() {
                     <path 
                       d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
                       fill="none" 
-                      stroke="#3B82F6" 
+                      stroke={isDark ? '#888888' : '#555555'} 
                       strokeWidth="2.5" 
                       strokeDasharray="4" 
                     />
@@ -382,7 +382,7 @@ export default function App() {
                   step="20"
                   value={simulatedTime} 
                   onChange={(e) => setSimulatedTime(Number(e.target.value))}
-                  className="w-full cursor-pointer accent-[#3B82F6]"
+                  className={`w-full cursor-pointer ${isDark ? 'accent-[#FFFFFF]' : 'accent-[#111111]'}`}
                 />
               </div>
             </div>
@@ -459,7 +459,7 @@ export default function App() {
         {activeTab === 'import' && (
           <div className={`${cardBg} border rounded-xl p-8 max-w-3xl mx-auto w-full shadow-sm`}>
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-[#3B82F6]/10 text-[#3B82F6] flex items-center justify-center">
+              <div className={`w-8 h-8 rounded-lg ${subBg} flex items-center justify-center`}>
                 <Upload className="w-4 h-4" />
               </div>
               <div>
