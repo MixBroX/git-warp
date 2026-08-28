@@ -454,11 +454,13 @@ export default function App() {
                     <div>
                       <span className={`${textMuted} block mb-1`}>Simulated Code Diff Snapshot</span>
                       <div className="bg-[#000000] text-[#EAEAEA] p-3 rounded font-mono text-[11px] leading-relaxed overflow-x-auto space-y-1 border border-[#333333]">
-                        <div className="text-[#787774]">// repository state at {selectedCommit.hash}</div>
-                        <div className="text-[#10B981]">+ export function initWarpSession() &#123;</div>
-                        <div className="text-[#10B981]">+   console.log("Warp loaded successfully");</div>
+                        <div className="text-[#787774]">// diff for commit {selectedCommit.hash}</div>
+                        <div className="text-[#787774]">// message: {selectedCommit.message}</div>
+                        <div className="text-[#10B981]">+ // applied changes by {selectedCommit.author}</div>
+                        <div className="text-[#10B981]">+ export function handleWarpAction() &#123;</div>
+                        <div className="text-[#10B981]">+   return "{selectedCommit.message.slice(0, 32)}...";</div>
                         <div className="text-[#10B981]">+ &#125;</div>
-                        <div className="text-[#EF4444]">- // legacy wrapper removed</div>
+                        <div className="text-[#EF4444]">- const legacyMode = false;</div>
                       </div>
                     </div>
                   </div>
