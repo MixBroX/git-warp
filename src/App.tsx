@@ -109,13 +109,13 @@ export default function App() {
       <header className="border-b border-[#EAEAEA] bg-[#FFFFFF] px-8 py-5 flex items-center justify-between sticky top-0 z-50 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="flex items-center space-x-3.5">
           <div className="w-9 h-9 rounded-lg bg-[#111111] text-[#FFFFFF] flex items-center justify-center font-mono font-bold text-sm tracking-wider shadow-sm">
-            GT
+            GW
           </div>
           <div>
             <h1 className="font-semibold text-sm tracking-tight">
-              Git Time-Machine & Conflict Visualizer
+              Git Warp — Browser Git Topology & Conflict Resolver
             </h1>
-            <p className="text-xs text-[#787774] mt-0.5">Frictionless client-side Git history topology & interactive merge conflict resolver</p>
+            <p className="text-xs text-[#787774] mt-0.5">Visualize branch history instantly & resolve merge conflicts without heavy desktop clients</p>
           </div>
         </div>
 
