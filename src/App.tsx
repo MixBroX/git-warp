@@ -27,11 +27,11 @@ interface CommitNode {
 }
 
 const DEFAULT_COMMITS: CommitNode[] = [
-  { id: 'c1', hash: 'a1b2c3d', message: 'Initial commit: setup base architecture', author: 'Alex', branch: 'main', x: 15, y: 30 },
-  { id: 'c2', hash: 'e4f5g6h', message: 'Add authentication middleware', author: 'Sarah', branch: 'main', x: 45, y: 30 },
-  { id: 'c3', hash: '7j8k9l0', message: 'Refactor database connection pool', author: 'Alex', branch: 'main', x: 75, y: 30 },
-  { id: 'c4', hash: '1m2n3p4', message: 'Start payment gateway integration', author: 'DevUser', branch: 'feature/stripe', x: 45, y: 75 },
-  { id: 'c5', hash: '5q6r7s8', message: 'Update webhook listeners and endpoints', author: 'DevUser', branch: 'feature/stripe', x: 75, y: 75, conflict: true },
+  { id: 'c1', hash: 'a1b2c3d', message: 'Initial commit: setup base architecture', author: 'Alex', branch: 'main', x: 15, y: 35 },
+  { id: 'c2', hash: 'e4f5g6h', message: 'Add authentication middleware', author: 'Sarah', branch: 'main', x: 42, y: 35 },
+  { id: 'c3', hash: '7j8k9l0', message: 'Refactor database connection pool', author: 'Alex', branch: 'main', x: 70, y: 35 },
+  { id: 'c4', hash: '1m2n3p4', message: 'Start payment gateway integration', author: 'DevUser', branch: 'feature/stripe', x: 42, y: 75 },
+  { id: 'c5', hash: '5q6r7s8', message: 'Update webhook listeners and endpoints', author: 'DevUser', branch: 'feature/stripe', x: 70, y: 75, conflict: true },
 ];
 
 export default function App() {
@@ -52,6 +52,10 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Filter commits based on timeline scrubber
+  const visibleCommitsCount = Math.max(1, Math.ceil((simulatedTime / 100) * commits.length));
+  const visibleCommits = commits.slice(0, visibleCommitsCount);
+
   // Parse git log text input
   const handleParseGitLog = () => {
     if (!rawLogInput.trim()) {
@@ -70,8 +74,8 @@ export default function App() {
         const message = parts.slice(1).join(' ') || 'Commit update';
         
         const isBranchB = line.includes('feature') || line.includes('fix') || index % 2 !== 0;
-        const xPos = Math.min(15 + (index * 20), 85);
-        const yPos = isBranchB ? 75 : 30;
+        const xPos = Math.min(15 + (index * 15), 85);
+        const yPos = isBranchB ? 75 : 35;
 
         parsedCommits.push({
           id: `imported-${index}`,
@@ -89,6 +93,7 @@ export default function App() {
         setCommits(parsedCommits);
         setSelectedCommit(parsedCommits[0]);
         setActiveTab('visualizer');
+        setSimulatedTime(100);
         setImportError('');
       } else {
         setImportError('Could not parse any commits. Ensure you use `git log --oneline` format.');
@@ -177,24 +182,47 @@ export default function App() {
 
               {/* Simulated Git Graph Canvas Area */}
               <div className="flex-1 bg-[#FBFBFA] border border-[#EAEAEA] rounded-lg relative min-h-[420px] p-6 flex items-center justify-center overflow-hidden">
-                {/* SVG Connecting Lines */}
+                {/* SVG Connecting Lines between visible commits */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '420px' }}>
-                  <line x1="15%" y1="30%" x2="45%" y2="30%" stroke="#346538" strokeWidth="2.5" strokeDasharray="3" />
-                  <line x1="45%" y1="30%" x2="75%" y2="30%" stroke="#346538" strokeWidth="2.5" />
-                  <path d="M 45 126 C 45 200, 45 220, 75 315" fill="none" stroke="#1F6C9F" strokeWidth="2.5" strokeDasharray="3" />
-                  <line x1="45%" y1="75%" x2="75%" y2="75%" stroke="#1F6C9F" strokeWidth="2.5" />
+                  {visibleCommits.map((c, i) => {
+                    if (i === 0) return null;
+                    const prev = visibleCommits[i - 1];
+                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? '#1F6C9F' : '#346538';
+                    return (
+                      <line 
+                        key={`line-${c.id}`}
+                        x1={`${prev.x}%`} 
+                        y1={`${prev.y}%`} 
+                        x2={`${c.x}%`} 
+                        y2={`${c.y}%`} 
+                        stroke={strokeColor} 
+                        strokeWidth="2.5" 
+                        strokeDasharray={c.branch !== prev.branch ? "4" : undefined}
+                      />
+                    );
+                  })}
+                  {/* Branch branch connector if both main and feature exist */}
+                  {visibleCommits.some(c => c.y === 75) && visibleCommits.some(c => c.y === 35 && c.x === 42) && (
+                    <path 
+                      d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
+                      fill="none" 
+                      stroke="#1F6C9F" 
+                      strokeWidth="2.5" 
+                      strokeDasharray="4" 
+                    />
+                  )}
                 </svg>
 
                 {/* Commit Nodes */}
                 <div className="absolute inset-0 p-6">
-                  {commits.map((c) => {
+                  {visibleCommits.map((c) => {
                     const isSelected = selectedCommit?.id === c.id;
                     return (
                       <button
                         key={c.id}
                         onClick={() => setSelectedCommit(c)}
                         style={{ left: `${c.x}%`, top: `${c.y}%` }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110 focus:outline-none"
+                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110 focus:outline-none z-10"
                       >
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all ${
                           isSelected 
@@ -218,14 +246,15 @@ export default function App() {
               <div className="mt-5 pt-4 border-t border-[#EAEAEA] flex flex-col gap-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-medium text-[#787774] flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5 text-[#111111]" /> Time-Machine Timeline Simulator
+                    <RefreshCw className="w-3.5 h-3.5 text-[#111111]" /> Time-Machine Timeline Simulator ({visibleCommits.length} of {commits.length} commits)
                   </span>
-                  <span className="font-mono text-[#111111]">State at {simulatedTime}% of history</span>
+                  <span className="font-mono text-[#111111]">{simulatedTime}% of history</span>
                 </div>
                 <input 
                   type="range" 
-                  min="10" 
+                  min="20" 
                   max="100" 
+                  step="20"
                   value={simulatedTime} 
                   onChange={(e) => setSimulatedTime(Number(e.target.value))}
                   className="w-full accent-[#111111] cursor-pointer"
@@ -384,7 +413,7 @@ export default function App() {
                 
                 {conflictResolved ? (
                   <div className="bg-[#346538]/20 p-2 rounded border border-[#346538]/40 text-[#A8D5BA]">
-                    &nbsp;&nbsp;return await StripeClient.charges.create({{ amount: 1500, currency: 'usd' }});
+                    &nbsp;&nbsp;return await StripeClient.charges.create(&#123; amount: 1500, currency: 'usd' &#125;);
                   </div>
                 ) : (
                   <>
@@ -392,7 +421,7 @@ export default function App() {
                       <div>&lt;&lt;&lt;&lt;&lt;&lt;&nbsp;HEAD (main branch)</div>
                       <div>&nbsp;&nbsp;return await LocalGateway.charge(cartId);</div>
                       <div>=======</div>
-                      <div>&nbsp;&nbsp;return await StripeClient.charges.create({{ amount: 1500, currency: 'usd' }});</div>
+                      <div>&nbsp;&nbsp;return await StripeClient.charges.create(&#123; amount: 1500, currency: 'usd' &#125;);</div>
                       <div>&gt;&gt;&gt;&gt;&gt;&gt;&nbsp;feature/stripe</div>
                     </div>
                   </>
