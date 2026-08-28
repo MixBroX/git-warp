@@ -9,6 +9,9 @@
 # Testing
 /coverage
 
+# Private Instructions
+PROJECT_INSTRUCTIONS.md
+
 # IDE / Editor files
 .vscode/
 .idea/
