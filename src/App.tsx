@@ -80,7 +80,20 @@ export default function App() {
         const cleanLine = line.replace(/^[|\*\/\-\s]+/, '');
         const parts = cleanLine.split(' ');
         const hash = parts[0] && parts[0].length >= 7 ? parts[0] : Math.random().toString(36).substring(2, 9);
-        const message = parts.slice(1).join(' ') || 'Commit update';
+        
+        // Try to detect author if user passed format like `hash (author) message` or `hash author - message`
+        let message = parts.slice(1).join(' ') || 'Commit update';
+        let author = 'Developer';
+
+        if (parts.length > 2 && (parts[1].includes('@') || parts[1].length < 15 && !parts[1].includes(':'))) {
+          // potential author token
+          author = parts[1].replace(/[()]/g, '');
+          message = parts.slice(2).join(' ');
+        } else {
+          // Generate a deterministic cool indie hacker author name based on index
+          const authors = ['Alex', 'Sarah', 'DevUser', 'Maintainer', 'Contributor'];
+          author = authors[index % authors.length];
+        }
         
         const isBranchB = line.toLowerCase().includes('feature') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('branch');
         const xPos = Math.min(15 + (index * 15), 85);
@@ -90,7 +103,7 @@ export default function App() {
           id: `imported-${index}`,
           hash: hash.substring(0, 7),
           message: message,
-          author: 'Developer',
+          author: author,
           branch: isBranchB ? 'feature/branch' : 'main',
           x: xPos,
           y: yPos,
