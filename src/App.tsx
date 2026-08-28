@@ -42,6 +42,10 @@ export default function App() {
   const [simulatedTime, setSimulatedTime] = useState<number>(100);
   const [conflictResolved, setConflictResolved] = useState(false);
   
+  // Tour / Onboarding state
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(1);
+  
   // Import state
   const [rawLogInput, setRawLogInput] = useState('');
   const [importError, setImportError] = useState('');
@@ -149,6 +153,14 @@ export default function App() {
             </button>
           </nav>
 
+          <button 
+            onClick={() => { setShowTour(true); setTourStep(1); }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-[#F7F6F3] border border-[#EAEAEA] text-[#111111] hover:bg-[#FFFFFF] hover:border-[#111111] transition-colors shadow-sm"
+          >
+            <Zap className="w-3.5 h-3.5 text-[#D97706]" />
+            Quick Tour
+          </button>
+
           <a 
             href="https://github.com/MixBroX/git-warp" 
             target="_blank" 
@@ -160,6 +172,96 @@ export default function App() {
           </a>
         </div>
       </header>
+
+      {/* Interactive Tour Modal */}
+      {showTour && (
+        <div className="fixed inset-0 z-50 bg-[#111111]/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#111111] text-[#FFFFFF] flex items-center justify-center font-mono font-bold text-xs">
+                  0{tourStep}/04
+                </div>
+                <h3 className="font-semibold text-sm">
+                  {tourStep === 1 && "Welcome to Git Warp! 🚀"}
+                  {tourStep === 2 && "1. Time-Machine Graph ⏳"}
+                  {tourStep === 3 && "2. Import Your Repo 📥"}
+                  {tourStep === 4 && "3. Merge Conflict Sandbox ⚡"}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowTour(false)}
+                className="text-[#787774] hover:text-[#111111] text-xs font-mono p-1"
+              >
+                ✕ Skip
+              </button>
+            </div>
+
+            <div className="text-xs text-[#787774] leading-relaxed space-y-2">
+              {tourStep === 1 && (
+                <>
+                  <p className="text-[#111111] font-medium">Зачем нужен Git Warp?</p>
+                  <p>Разработчикам и инди-хакерам часто нужно быстро посмотреть историю веток или разобраться с мерж-конфликтами, но устанавливать тяжелые десктопные клиенты (вроде SourceTree или GitKraken) долго и неудобно.</p>
+                  <p><strong>Git Warp</strong> — это легкий и мгновенный инструмент прямо в браузере. Ваши файлы и логи никогда не покидают компьютер (100% Client-Side).</p>
+                </>
+              )}
+              {tourStep === 2 && (
+                <>
+                  <p className="text-[#111111] font-medium">Интерактивный граф коммитов</p>
+                  <p>На главной вкладке вы видите визуальную топологию веток (`main` и `feature/stripe`).</p>
+                  <p>• Кликните на любой кружок-коммит, чтобы открыть <strong>Commit Inspector</strong> справа.<br/>• Используйте ползунок времени внизу, чтобы «промотать» историю назад.</p>
+                </>
+              )}
+              {tourStep === 3 && (
+                <>
+                  <p className="text-[#111111] font-medium">Импорт вашего личного репозитория</p>
+                  <p>Хотите посмотреть граф своего реального проекта? Перейдите во вкладку <strong>Import My Repo</strong>.</p>
+                  <p>Введите простую команду в терминале своего репозитория (`git log --oneline --all`), вставьте результат в поле ввода — и Git Warp мгновенно построит красивую визуализацию ваших коммитов!</p>
+                </>
+              )}
+              {tourStep === 4 && (
+                <>
+                  <p className="text-[#111111] font-medium">Песочница мерж-конфликтов</p>
+                  <p>Боитесь конфликтов при слиянии веток? Во вкладке <strong>Conflict Sandbox</strong> показан реальный пример мерж-конфликта с маркерами (&lt;&lt;&lt;&lt;&lt;&lt; HEAD).</p>
+                  <p>Нажмите «Accept Incoming» или «Accept Current», чтобы мгновенно разрешить его и скопировать готовые команды для коммита!</p>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-[#EAEAEA]">
+              <button 
+                onClick={() => setTourStep(Math.max(1, tourStep - 1))}
+                disabled={tourStep === 1}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md border border-[#EAEAEA] transition-colors ${tourStep === 1 ? 'opacity-40 cursor-not-allowed bg-[#F7F6F3]' : 'hover:bg-[#F7F6F3]'}`}
+              >
+                Назад
+              </button>
+
+              <div className="flex gap-1">
+                {[1, 2, 3, 4].map((s) => (
+                  <div key={s} className={`w-2 h-2 rounded-full ${tourStep === s ? 'bg-[#111111]' : 'bg-[#EAEAEA]'}`} />
+                ))}
+              </div>
+
+              {tourStep < 4 ? (
+                <button 
+                  onClick={() => setTourStep(tourStep + 1)}
+                  className="px-4 py-1.5 text-xs font-medium rounded-md bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] transition-colors"
+                >
+                  Далее
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowTour(false)}
+                  className="px-4 py-1.5 text-xs font-medium rounded-md bg-[#346538] text-[#FFFFFF] hover:bg-[#2c5330] transition-colors"
+                >
+                  Начать работу! 🚀
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-8 flex flex-col gap-6">
