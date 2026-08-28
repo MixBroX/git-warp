@@ -82,7 +82,7 @@ export default function App() {
         const hash = parts[0] && parts[0].length >= 7 ? parts[0] : Math.random().toString(36).substring(2, 9);
         const message = parts.slice(1).join(' ') || 'Commit update';
         
-        const isBranchB = line.includes('feature') || line.includes('fix') || index % 2 !== 0;
+        const isBranchB = line.toLowerCase().includes('feature') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('branch');
         const xPos = Math.min(15 + (index * 15), 85);
         const yPos = isBranchB ? 75 : 35;
 
@@ -94,7 +94,7 @@ export default function App() {
           branch: isBranchB ? 'feature/branch' : 'main',
           x: xPos,
           y: yPos,
-          conflict: index === lines.length - 1 && lines.length > 2
+          conflict: false
         });
       });
 
