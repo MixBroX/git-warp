@@ -64,8 +64,7 @@ export default function App() {
       const parsedCommits: CommitNode[] = [];
       
       lines.forEach((line, index) => {
-        // Simple heuristic to extract hash and message from git log --oneline
-        const cleanLine = line.replace(/^[|\*\/\-\s]+/, ''); // remove graph symbols
+        const cleanLine = line.replace(/^[|\*\/\-\s]+/, '');
         const parts = cleanLine.split(' ');
         const hash = parts[0] && parts[0].length >= 7 ? parts[0] : Math.random().toString(36).substring(2, 9);
         const message = parts.slice(1).join(' ') || 'Commit update';
@@ -146,7 +145,7 @@ export default function App() {
           </nav>
 
           <a 
-            href="https://github.com/MixBroX/git-time-machine" 
+            href="https://github.com/MixBroX/git-warp" 
             target="_blank" 
             rel="noreferrer"
             className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] transition-colors shadow-sm"
@@ -198,199 +197,252 @@ export default function App() {
                         className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110 focus:outline-none"
                       >
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all ${
-                          c.conflict 
-                            ? 'bg-[#FDEBEC] border-[#9F2F2D] text-[#9F2F2D]' 
-                            : c.branch === 'main' 
-                              ? 'bg-[#EDF3EC] border-[#346538] text-[#346538]' 
-                              : 'bg-[#E1F3FE] border-[#1F6C9F] text-[#1F6C9F]'
-                        } ${isSelected ? 'ring-4 ring-[#111111]/10 scale-110 shadow-md' : ''}`}>
+                          isSelected 
+                            ? 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/10' 
+                            : c.conflict 
+                              ? 'bg-[#FDF3F2] border-[#9F2F2D] text-[#9F2F2D]' 
+                              : 'bg-[#FFFFFF] border-[#D0D0CD] text-[#111111] hover:border-[#111111]'
+                        }`}>
                           {c.conflict ? <AlertTriangle className="w-4 h-4" /> : <GitCommit className="w-4 h-4" />}
                         </div>
-                        <span className="mt-2 font-mono text-[11px] bg-[#FFFFFF] px-2 py-0.5 rounded-md border border-[#EAEAEA] text-[#787774] group-hover:text-[#111111] shadow-xs">
-                          {c.hash}
-                        </span>
+                        <div className="absolute top-10 bg-[#FFFFFF] border border-[#EAEAEA] px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 group-hover:opacity-100">
+                          {c.hash} ({c.branch})
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Time Machine Slider Control */}
-                <div className="absolute bottom-5 left-6 right-6 bg-[#FFFFFF]/95 backdrop-blur-md border border-[#EAEAEA] p-3.5 rounded-xl flex items-center gap-4 shadow-sm">
-                  <span className="text-xs font-mono font-medium text-[#787774] flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#787774]" style={{ animationDuration: '10s' }} />
-                    Time Scrub:
-                  </span>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={simulatedTime} 
-                    onChange={(e) => setSimulatedTime(Number(e.target.value))}
-                    className="flex-1 accent-[#111111] h-1.5 bg-[#EAEAEA] rounded-lg cursor-pointer"
-                  />
-                  <span className="text-xs font-mono font-semibold bg-[#F7F6F3] px-2.5 py-1 rounded border border-[#EAEAEA]">
-                    {simulatedTime}% Snapshot
-                  </span>
-                </div>
               </div>
 
-              <div className="mt-4 text-xs text-[#787774] flex items-center justify-between">
-                <span>Tip: Click any commit node to inspect its diff and time-machine snapshot.</span>
-                <span className="font-mono flex items-center gap-1 text-[#346538]">
-                  <ShieldCheck className="w-3.5 h-3.5" /> 100% Client-Side Secured
-                </span>
+              {/* Time Scrubber / Simulator Slider */}
+              <div className="mt-5 pt-4 border-t border-[#EAEAEA] flex flex-col gap-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-medium text-[#787774] flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5 text-[#111111]" /> Time-Machine Timeline Simulator
+                  </span>
+                  <span className="font-mono text-[#111111]">State at {simulatedTime}% of history</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="100" 
+                  value={simulatedTime} 
+                  onChange={(e) => setSimulatedTime(Number(e.target.value))}
+                  className="w-full accent-[#111111] cursor-pointer"
+                />
               </div>
             </div>
 
-            {/* Right Panel: Commit Details & Inspector */}
+            {/* Right: Commit Inspector Panel */}
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-6 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <div>
-                <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA]">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#787774]" />
-                    Commit Inspector
-                  </h3>
-                  <span className="font-mono text-xs px-2.5 py-1 rounded bg-[#F7F6F3] border border-[#EAEAEA] font-semibold">
-                    {selectedCommit?.hash || '-------'}
+                <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA] mb-4">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-[#787774]" />
+                    <h2 className="text-sm font-semibold">Commit Inspector</h2>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F7F6F3] border border-[#EAEAEA] text-[#787774]">
+                    {selectedCommit?.branch}
                   </span>
                 </div>
 
-                <div className="mt-5 space-y-5">
-                  <div>
-                    <label className="text-[11px] font-mono text-[#787774] uppercase tracking-wider block mb-1">Commit Message</label>
-                    <p className="text-sm font-medium leading-snug">{selectedCommit?.message || 'Select a commit'}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 bg-[#F9F9F8] p-3.5 rounded-lg border border-[#EAEAEA]">
+                {selectedCommit ? (
+                  <div className="space-y-4 text-xs">
                     <div>
-                      <label className="text-[10px] font-mono text-[#787774] uppercase tracking-wider block">Author</label>
-                      <p className="text-xs font-semibold mt-0.5">{selectedCommit?.author || 'N/A'}</p>
+                      <span className="text-[#787774] block mb-1">Commit Hash & Author</span>
+                      <div className="font-mono bg-[#F7F6F3] p-2.5 rounded border border-[#EAEAEA] flex items-center justify-between">
+                        <span>{selectedCommit.hash} — <strong className="text-[#111111]">{selectedCommit.author}</strong></span>
+                        <button 
+                          onClick={() => handleCopyCommand(`git checkout ${selectedCommit.hash}`)}
+                          className="text-[#787774] hover:text-[#111111] transition-colors p-1"
+                          title="Copy git checkout command"
+                        >
+                          {copied ? <Check className="w-3.5 h-3.5 text-[#346538]" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-mono text-[#787774] uppercase tracking-wider block">Target Branch</label>
-                      <p className="text-xs font-mono font-semibold mt-0.5 text-[#1F6C9F]">{selectedCommit?.branch || 'N/A'}</p>
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="text-[11px] font-mono text-[#787774] uppercase tracking-wider mb-2 block">Simulated Diff Snapshot</label>
-                    <div className="bg-[#111111] text-[#FFFFFF] p-4 rounded-lg font-mono text-xs overflow-x-auto space-y-1 shadow-inner">
-                      <p className="text-[#787774]"># file: modified snapshot</p>
-                      <p className="text-[#346538]">+ commit {selectedCommit?.hash}</p>
-                      <p className="text-[#346538]">+ author: {selectedCommit?.author}</p>
-                      <p className="text-[#787774]">... changes applied locally ...</p>
+                    <div>
+                      <span className="text-[#787774] block mb-1">Commit Message</span>
+                      <p className="font-medium text-[#111111] bg-[#F7F6F3] p-2.5 rounded border border-[#EAEAEA]">
+                        {selectedCommit.message}
+                      </p>
+                    </div>
+
+                    <div>
+                      <span className="text-[#787774] block mb-1">Simulated Code Diff Snapshot</span>
+                      <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded font-mono text-[11px] leading-relaxed overflow-x-auto space-y-1">
+                        <div className="text-[#787774]">// repository state at {selectedCommit.hash}</div>
+                        <div className="text-[#346538]">+ export function initWarpSession() &#123;</div>
+                        <div className="text-[#346538]">+   console.log("Warp loaded successfully");</div>
+                        <div className="text-[#346538]">+ &#125;</div>
+                        <div className="text-[#9F2F2D]">- // legacy wrapper removed</div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <p className="text-xs text-[#787774] italic">Select a commit node from the graph to inspect.</p>
+                )}
               </div>
 
-              <div className="pt-6 border-t border-[#EAEAEA] mt-6">
-                <button 
-                  onClick={() => handleCopyCommand(`git checkout ${selectedCommit?.hash}`)}
-                  className="w-full py-2.5 px-4 rounded-lg bg-[#111111] text-[#FFFFFF] text-xs font-medium hover:bg-[#333333] transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-[#346538]" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Command Copied to Clipboard!' : `Copy git checkout ${selectedCommit?.hash}`}
-                </button>
+              {/* Quick Checkout CLI Helper */}
+              <div className="mt-6 pt-4 border-t border-[#EAEAEA]">
+                <span className="text-[11px] text-[#787774] block mb-2">Quick Checkout Command</span>
+                <div className="bg-[#F7F6F3] border border-[#EAEAEA] p-2.5 rounded flex items-center justify-between font-mono text-xs">
+                  <span className="text-[#111111] truncate">git checkout {selectedCommit?.hash}</span>
+                  <button 
+                    onClick={() => handleCopyCommand(`git checkout ${selectedCommit?.hash}`)}
+                    className="ml-2 bg-[#111111] text-[#FFFFFF] px-2.5 py-1 rounded text-[10px] hover:bg-[#333333] transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'import' && (
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-2xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6">
-            <div className="pb-4 border-b border-[#EAEAEA]">
-              <h2 className="text-base font-semibold flex items-center gap-2">
-                <Upload className="w-5 h-5 text-[#1F6C9F]" />
-                Import Your Own Repository Logs
-              </h2>
-              <p className="text-xs text-[#787774] mt-1">
-                Run <code className="bg-[#F7F6F3] px-1.5 py-0.5 rounded border border-[#EAEAEA]">git log --oneline --all -n 20</code> in your terminal, paste the output below, and visualize your repo instantly.
-              </p>
+          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-3xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-[#1F6C9F]/10 text-[#1F6C9F] flex items-center justify-center">
+                <Upload className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Import Your Own Git Repository Log</h2>
+                <p className="text-xs text-[#787774]">Visualize your personal project history instantly in the browser.</p>
+              </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 mt-6">
               <div>
-                <label className="text-xs font-mono text-[#787774] uppercase tracking-wider block mb-2">Paste Git Log Output:</label>
+                <label className="block text-xs font-medium text-[#787774] mb-1.5">
+                  Step 1: Run this command in your local terminal inside any git repo:
+                </label>
+                <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded font-mono text-xs flex items-center justify-between">
+                  <span>git log --oneline --all -n 25</span>
+                  <button 
+                    onClick={() => handleCopyCommand('git log --oneline --all -n 25')}
+                    className="text-[#EAEAEA] hover:text-[#FFFFFF]"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#787774] mb-1.5">
+                  Step 2: Paste the output below:
+                </label>
                 <textarea 
                   rows={8}
                   value={rawLogInput}
                   onChange={(e) => setRawLogInput(e.target.value)}
-                  placeholder="e.g.&#10;a1b2c3d Fix login button bug on mobile&#10;e4f5g6h Add stripe webhook integration&#10;7j8k9l0 Initial release setup"
-                  className="w-full p-4 rounded-xl border border-[#EAEAEA] bg-[#FBFBFA] font-mono text-xs focus:outline-none focus:border-[#111111] transition-colors"
+                  placeholder="e.g.&#10;a1b2c3d Fix authentication token expiry bug&#10;e4f5g6h Merge pull request #12 from main&#10;7j8k9l0 Add initial dashboard layout"
+                  className="w-full bg-[#F7F6F3] border border-[#EAEAEA] rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#111111]"
                 />
               </div>
 
               {importError && (
-                <p className="text-xs text-[#9F2F2D] font-medium">{importError}</p>
+                <div className="p-3 bg-[#FDF3F2] border border-[#9F2F2D]/20 text-[#9F2F2D] rounded-lg text-xs">
+                  {importError}
+                </div>
               )}
 
               <button 
                 onClick={handleParseGitLog}
-                className="w-full py-3 px-4 rounded-xl bg-[#111111] text-[#FFFFFF] text-xs font-medium hover:bg-[#333333] transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-2.5 bg-[#111111] text-[#FFFFFF] rounded-lg text-xs font-medium hover:bg-[#333333] transition-colors shadow-sm"
               >
-                <FileText className="w-4 h-4" />
-                Generate Interactive Topology Graph
+                Parse & Visualize Git Topology
               </button>
             </div>
           </div>
         )}
 
         {activeTab === 'conflict' && (
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-3xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between pb-6 border-b border-[#EAEAEA]">
-              <div>
-                <h2 className="text-base font-semibold flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-[#9F2F2D]" />
-                  Interactive Merge Conflict Sandbox
-                </h2>
-                <p className="text-xs text-[#787774] mt-1">Simulate how Git markers collide and resolve them visually before applying to your repository.</p>
+          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-4xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#EAEAEA]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#9F2F2D]/10 text-[#9F2F2D] flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">Interactive Merge Conflict Sandbox</h2>
+                  <p className="text-xs text-[#787774]">Simulate resolving real-world git conflicts without touching the command line.</p>
+                </div>
               </div>
-              <span className={`px-3 py-1 text-xs font-mono rounded-full font-semibold border ${conflictResolved ? 'bg-[#EDF3EC] text-[#346538] border-[#346538]/20' : 'bg-[#FDEBEC] text-[#9F2F2D] border-[#9F2F2D]/20'}`}>
-                {conflictResolved ? 'Resolved Cleanly' : 'Conflict Detected (1)'}
+              <span className={`text-xs font-mono px-3 py-1 rounded-full border ${conflictResolved ? 'bg-[#346538]/10 text-[#346538] border-[#346538]/20' : 'bg-[#9F2F2D]/10 text-[#9F2F2D] border-[#9F2F2D]/20'}`}>
+                {conflictResolved ? 'Conflict Resolved ✓' : 'Conflict Active (HEAD vs feature/stripe)'}
               </span>
             </div>
 
-            <div className="mt-6 space-y-5">
-              <div>
-                <label className="text-xs font-mono text-[#787774] uppercase tracking-wider block mb-2">Conflict Block in <code className="text-[#111111] bg-[#F7F6F3] px-1.5 py-0.5 rounded border border-[#EAEAEA]">src/index.ts</code></label>
-                <div className="font-mono text-xs bg-[#111111] text-[#FFFFFF] p-5 rounded-xl space-y-2 overflow-x-auto shadow-inner">
-                  <p className="text-[#787774]">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (main branch)</p>
-                  <p className="text-[#1F6C9F]">const PORT = process.env.PORT || 3000;</p>
-                  <p className="text-[#787774]">&#x3d;&#x3d;&#x3d;&#x3d;&#x3d;&#x3d;&#x3d;</p>
-                  <p className="text-[#346538]">const PORT = Number(process.env.PORT) || 8080;</p>
-                  <p className="text-[#787774]">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/stripe</p>
+            <div className="space-y-6">
+              {/* Conflict Code Block */}
+              <div className="bg-[#111111] text-[#EAEAEA] rounded-lg p-4 font-mono text-xs space-y-2 overflow-x-auto shadow-inner">
+                <div className="text-[#787774]">// file: src/services/payment.ts</div>
+                <div>export async function processCheckout(cartId: string) &#123;</div>
+                
+                {conflictResolved ? (
+                  <div className="bg-[#346538]/20 p-2 rounded border border-[#346538]/40 text-[#A8D5BA]">
+                    &nbsp;&nbsp;return await StripeClient.charges.create({{ amount: 1500, currency: 'usd' }});
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-[#9F2F2D]/20 p-2 rounded border border-[#9F2F2D]/40 text-[#F5B7B1] space-y-1">
+                      <div>&lt;&lt;&lt;&lt;&lt;&lt;&nbsp;HEAD (main branch)</div>
+                      <div>&nbsp;&nbsp;return await LocalGateway.charge(cartId);</div>
+                      <div>=======</div>
+                      <div>&nbsp;&nbsp;return await StripeClient.charges.create({{ amount: 1500, currency: 'usd' }});</div>
+                      <div>&gt;&gt;&gt;&gt;&gt;&gt;&nbsp;feature/stripe</div>
+                    </div>
+                  </>
+                )}
+
+                <div>&#125;</div>
+              </div>
+
+              {/* Resolution Action Buttons */}
+              {!conflictResolved ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setConflictResolved(true)}
+                    className="p-4 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] hover:bg-[#FFFFFF] hover:border-[#111111] transition-all text-left group"
+                  >
+                    <span className="text-xs font-semibold block text-[#111111] mb-1 group-hover:underline">Accept Incoming (feature/stripe)</span>
+                    <span className="text-[11px] text-[#787774] block">Keep Stripe charges implementation and discard HEAD changes.</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setConflictResolved(true)}
+                    className="p-4 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] hover:bg-[#FFFFFF] hover:border-[#111111] transition-all text-left group"
+                  >
+                    <span className="text-xs font-semibold block text-[#111111] mb-1 group-hover:underline">Accept Current (HEAD)</span>
+                    <span className="text-[11px] text-[#787774] block">Keep LocalGateway charge implementation and discard incoming.</span>
+                  </button>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <button 
-                  onClick={() => setConflictResolved(true)}
-                  className="p-4 rounded-xl bg-[#EDF3EC]/50 hover:bg-[#EDF3EC] text-[#346538] border border-[#346538]/30 font-medium text-xs transition-all text-left shadow-xs group"
-                >
-                  <strong className="block text-sm font-semibold mb-1 group-hover:underline">Accept Incoming (feature/stripe)</strong>
-                  <span className="block text-[11px] text-[#346538]/85">Use port 8080 with explicit Number cast</span>
-                </button>
-                <button 
-                  onClick={() => setConflictResolved(true)}
-                  className="p-4 rounded-xl bg-[#E1F3FE]/50 hover:bg-[#E1F3FE] text-[#1F6C9F] border border-[#1F6C9F]/30 font-medium text-xs transition-all text-left shadow-xs group"
-                >
-                  <strong className="block text-sm font-semibold mb-1 group-hover:underline">Accept Current (HEAD)</strong>
-                  <span className="block text-[11px] text-[#1F6C9F]/85">Use default port 3000 with logical OR fallback</span>
-                </button>
-              </div>
-
-              {conflictResolved && (
-                <div className="mt-6 p-5 rounded-xl bg-[#EDF3EC] border border-[#346538]/30 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
-                  <div className="text-xs text-[#346538]">
-                    <strong className="font-semibold block mb-0.5">Success! Conflict resolved cleanly.</strong>
-                    Run this command in your terminal to finalize the merge:
+              ) : (
+                <div className="bg-[#F7F6F3] p-5 rounded-lg border border-[#EAEAEA] flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-semibold text-[#111111] mb-0.5">Conflict successfully resolved!</h3>
+                    <p className="text-[11px] text-[#787774]">Run the following commands in your terminal to commit the resolution:</p>
                   </div>
                   <button 
-                    onClick={() => handleCopyCommand('git add . && git commit -m "fix: resolve port conflict cleanly"')}
-                    className="px-4 py-2 rounded-lg bg-[#346538] text-[#FFFFFF] font-mono text-xs flex items-center gap-2 hover:bg-[#2c5530] transition-colors shadow-sm whitespace-nowrap"
+                    onClick={() => setConflictResolved(false)}
+                    className="px-3 py-1.5 bg-[#FFFFFF] border border-[#EAEAEA] hover:border-[#111111] text-xs font-medium rounded-md transition-colors"
                   >
-                    <Copy className="w-3.5 h-3.5" /> Copy Resolution CLI
+                    Reset Sandbox
+                  </button>
+                </div>
+              )}
+
+              {conflictResolved && (
+                <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded-lg font-mono text-xs flex items-center justify-between">
+                  <span>git add . &amp;&amp; git commit -m "fix: resolve merge conflict with stripe gateway"</span>
+                  <button 
+                    onClick={() => handleCopyCommand('git add . && git commit -m "fix: resolve merge conflict with stripe gateway"')}
+                    className="bg-[#333333] hover:bg-[#444444] text-[#FFFFFF] px-2.5 py-1 rounded text-[10px] transition-colors flex items-center gap-1"
+                  >
+                    <Copy className="w-3 h-3" /> Copy
                   </button>
                 </div>
               )}
@@ -399,38 +451,39 @@ export default function App() {
         )}
 
         {activeTab === 'docs' && (
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-3xl mx-auto w-full space-y-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              <Zap className="w-4 h-4 text-[#111111]" />
-              How Git Time-Machine Works
-            </h2>
-            <div className="space-y-4 text-sm text-[#787774] leading-relaxed">
-              <p>
-                Git Time-Machine is built for developers who need an instantaneous, zero-install visualizer for complex Git branch histories and merge conflicts directly in the browser without sending source code to external servers.
-              </p>
-              <h3 className="text-sm font-semibold text-[#111111] pt-2">Quick CLI Log Export</h3>
-              <p>
-                To generate a compatible branch topology stream from your local repository, run the standard Git log command in your terminal:
-              </p>
-              <div className="bg-[#111111] text-[#FFFFFF] p-4 rounded-xl font-mono text-xs shadow-inner">
-                git log --graph --oneline --all --decorate
+          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-3xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6">
+            <div>
+              <h2 className="text-base font-semibold mb-1">Git Warp Documentation & CLI Guides</h2>
+              <p className="text-xs text-[#787774]">Master frictionless Git visualization and conflict resolution.</p>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-4 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] space-y-2">
+                <h3 className="font-semibold text-[#111111]">1. Exporting Your Git Log</h3>
+                <p className="text-[#787774]">To inspect any private repository, run the following command in your terminal and paste the output into the <strong>Import My Repo</strong> tab:</p>
+                <div className="bg-[#111111] text-[#EAEAEA] p-2.5 rounded font-mono text-[11px]">
+                  git log --oneline --all -n 30 --graph
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] space-y-2">
+                <h3 className="font-semibold text-[#111111]">2. Privacy & Security</h3>
+                <p className="text-[#787774]">Git Warp is a 100% client-side Single Page Application (SPA). Your code, logs, and commit messages never leave your browser memory and are never transmitted to external servers.</p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] space-y-2">
+                <h3 className="font-semibold text-[#111111]">3. Built for Indie Hackers</h3>
+                <p className="text-[#787774]">Designed with a Premium Utilitarian Minimalism aesthetic (Linear / Vercel style) to solve daily friction without heavy desktop software.</p>
               </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Editorial Footer */}
-      <footer className="border-t border-[#EAEAEA] bg-[#FFFFFF] py-6 px-8 text-xs text-[#787774] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#346538]"></span>
-          <span>Git Time-Machine • Zero backend dependencies, 100% client-side utility.</span>
-        </div>
-        <div className="flex items-center gap-6 font-medium">
-          <a href="https://github.com/MixBroX/git-time-machine" target="_blank" rel="noreferrer" className="hover:text-[#111111] transition-colors">GitHub Repository</a>
-          <span>•</span>
-          <span className="text-[#111111]">Open Source Tool</span>
-        </div>
+      {/* Footer */}
+      <footer className="border-t border-[#EAEAEA] bg-[#FFFFFF] px-8 py-4 text-center text-xs text-[#787774] flex items-center justify-between">
+        <span>Git Warp © 2026 — Zero-dependency client-side Git history topology</span>
+        <span className="font-mono text-[11px]">v1.0.0-stable</span>
       </footer>
     </div>
   );
