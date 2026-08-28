@@ -78,21 +78,35 @@ export default function App() {
       
       lines.forEach((line, index) => {
         const cleanLine = line.replace(/^[|\*\/\-\s]+/, '');
+        
+        // Let's parse git log formats like:
+        // 1. `a1b2c3d Author Name: Commit message`
+        // 2. `a1b2c3d (Author Name) Commit message`
+        // 3. Standard `a1b2c3d Commit message`
+        
         const parts = cleanLine.split(' ');
         const hash = parts[0] && parts[0].length >= 7 ? parts[0] : Math.random().toString(36).substring(2, 9);
         
-        // Try to detect author if user passed format like `hash (author) message` or `hash author - message`
-        let message = parts.slice(1).join(' ') || 'Commit update';
-        let author = 'Developer';
+        let author = 'GitUser';
+        let message = parts.slice(1).join(' ');
 
-        if (parts.length > 2 && (parts[1].includes('@') || parts[1].length < 15 && !parts[1].includes(':'))) {
-          // potential author token
-          author = parts[1].replace(/[()]/g, '');
-          message = parts.slice(2).join(' ');
-        } else {
-          // Generate a deterministic cool indie hacker author name based on index
-          const authors = ['Alex', 'Sarah', 'DevUser', 'Maintainer', 'Contributor'];
-          author = authors[index % authors.length];
+        // Check if second part contains colon or parenthesis (e.g. "Alex:" or "(Alex)")
+        if (parts.length > 2) {
+          const secondPart = parts[1];
+          if (secondPart.endsWith(':')) {
+            author = secondPart.slice(0, -1);
+            message = parts.slice(2).join(' ');
+          } else if (secondPart.startsWith('(') && secondPart.endsWith(')')) {
+            author = secondPart.slice(1, -1);
+            message = parts.slice(2).join(' ');
+          } else if (!secondPart.startsWith('-') && secondPart.length < 20 && parts.length > 3 && parts[2] === '-') {
+            author = secondPart;
+            message = parts.slice(3).join(' ');
+          }
+        }
+
+        if (!message.trim()) {
+          message = parts.slice(1).join(' ') || 'Commit update';
         }
         
         const isBranchB = line.toLowerCase().includes('feature') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('branch');
