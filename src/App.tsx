@@ -12,7 +12,9 @@ import {
   Zap,
   RefreshCw,
   Upload,
-  FileText
+  FileText,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface CommitNode {
@@ -42,9 +44,12 @@ export default function App() {
   const [simulatedTime, setSimulatedTime] = useState<number>(100);
   const [conflictResolved, setConflictResolved] = useState(false);
   
-  // Tour / Onboarding state
+  // Theme state: default dark theme
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Tour / Onboarding state (steps 0 to 3)
   const [showTour, setShowTour] = useState(false);
-  const [tourStep, setTourStep] = useState(1);
+  const [tourStep, setTourStep] = useState(0);
   
   // Import state
   const [rawLogInput, setRawLogInput] = useState('');
@@ -107,155 +112,173 @@ export default function App() {
     }
   };
 
+  // Theme color variables mapping
+  const isDark = theme === 'dark';
+  const bgMain = isDark ? 'bg-[#111111] text-[#EAEAEA]' : 'bg-[#F7F6F3] text-[#111111]';
+  const bgHeader = isDark ? 'bg-[#1A1A1A] border-[#333333]' : 'bg-[#FFFFFF] border-[#EAEAEA]';
+  const cardBg = isDark ? 'bg-[#1A1A1A] border-[#333333]' : 'bg-[#FFFFFF] border-[#EAEAEA]';
+  const subBg = isDark ? 'bg-[#222222] border-[#333333]' : 'bg-[#F7F6F3] border-[#EAEAEA]';
+  const textMuted = isDark ? 'text-[#999999]' : 'text-[#787774]';
+  const borderColor = isDark ? 'border-[#333333]' : 'border-[#EAEAEA]';
+
   return (
-    <div className="min-h-screen bg-[#F7F6F3] text-[#111111] flex flex-col font-sans selection:bg-[#111111] selection:text-[#FFFFFF]">
+    <div className={`min-h-screen ${bgMain} flex flex-col font-sans selection:bg-[#3B82F6] selection:text-[#FFFFFF] transition-colors`}>
       {/* Top Editorial Header */}
-      <header className="border-b border-[#EAEAEA] bg-[#FFFFFF] px-8 py-5 flex items-center justify-between sticky top-0 z-50 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+      <header className={`border-b ${bgHeader} px-8 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm`}>
         <div className="flex items-center space-x-3.5">
-          <div className="w-9 h-9 rounded-lg bg-[#111111] text-[#FFFFFF] flex items-center justify-center font-mono font-bold text-sm tracking-wider shadow-sm">
+          <div className={`w-9 h-9 rounded-lg ${isDark ? 'bg-[#FFFFFF] text-[#111111]' : 'bg-[#111111] text-[#FFFFFF]'} flex items-center justify-center font-mono font-bold text-sm tracking-wider shadow-sm`}>
             GW
           </div>
           <div>
             <h1 className="font-semibold text-sm tracking-tight">
               Git Warp — Browser Git Topology & Conflict Resolver
             </h1>
-            <p className="text-xs text-[#787774] mt-0.5">Visualize branch history instantly & resolve merge conflicts without heavy desktop clients</p>
+            <p className={`text-xs ${textMuted} mt-0.5`}>Visualize branch history instantly & resolve merge conflicts without heavy desktop clients</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <nav className="flex space-x-1 bg-[#F7F6F3] p-1 rounded-lg border border-[#EAEAEA]">
+        <div className="flex items-center space-x-3">
+          <nav className={`flex space-x-1 ${subBg} p-1 rounded-lg border ${borderColor}`}>
             <button 
               onClick={() => setActiveTab('visualizer')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'visualizer' ? 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold' : 'text-[#787774] hover:text-[#111111]'}`}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'visualizer' ? (isDark ? 'bg-[#333333] text-[#FFFFFF] shadow-sm font-semibold' : 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold') : `${textMuted} hover:text-[#FFFFFF]`}`}
             >
               Time-Machine Graph
             </button>
             <button 
               onClick={() => setActiveTab('import')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'import' ? 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold' : 'text-[#787774] hover:text-[#111111]'}`}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'import' ? (isDark ? 'bg-[#333333] text-[#FFFFFF] shadow-sm font-semibold' : 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold') : `${textMuted} hover:text-[#FFFFFF]`}`}
             >
-              <Upload className="w-3.5 h-3.5 text-[#1F6C9F]" />
+              <Upload className="w-3.5 h-3.5 text-[#3B82F6]" />
               Import My Repo
             </button>
             <button 
               onClick={() => setActiveTab('conflict')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'conflict' ? 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold' : 'text-[#787774] hover:text-[#111111]'}`}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'conflict' ? (isDark ? 'bg-[#333333] text-[#FFFFFF] shadow-sm font-semibold' : 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold') : `${textMuted} hover:text-[#FFFFFF]`}`}
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-[#9F2F2D]" />
+              <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
               Conflict Sandbox
             </button>
             <button 
               onClick={() => setActiveTab('docs')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'docs' ? 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold' : 'text-[#787774] hover:text-[#111111]'}`}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'docs' ? (isDark ? 'bg-[#333333] text-[#FFFFFF] shadow-sm font-semibold' : 'bg-[#FFFFFF] text-[#111111] shadow-sm font-semibold') : `${textMuted} hover:text-[#FFFFFF]`}`}
             >
               Documentation
             </button>
           </nav>
 
           <button 
-            onClick={() => { setShowTour(true); setTourStep(1); }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-[#F7F6F3] border border-[#EAEAEA] text-[#111111] hover:bg-[#FFFFFF] hover:border-[#111111] transition-colors shadow-sm"
+            onClick={() => { setShowTour(true); setTourStep(0); }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
+            title="Launch Interactive Tour"
           >
-            <Zap className="w-3.5 h-3.5 text-[#D97706]" />
+            <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
             Quick Tour
+          </button>
+
+          <button 
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className={`p-2 rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
+            title="Toggle Light / Dark Mode"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-[#F59E0B]" /> : <Moon className="w-4 h-4 text-[#3B82F6]" />}
           </button>
 
           <a 
             href="https://github.com/MixBroX/git-warp" 
             target="_blank" 
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] transition-colors shadow-sm"
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md ${isDark ? 'bg-[#FFFFFF] text-[#111111] hover:bg-[#EAEAEA]' : 'bg-[#111111] text-[#FFFFFF] hover:bg-[#333333]'} transition-colors shadow-sm`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            GitHub Repo
+            GitHub
           </a>
         </div>
       </header>
 
-      {/* Interactive Tour Modal */}
+      {/* Interactive Tour Modal (English, 03 steps: 00/03 to 03/03) */}
       {showTour && (
-        <div className="fixed inset-0 z-50 bg-[#111111]/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA]">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#111111] text-[#FFFFFF] flex items-center justify-center font-mono font-bold text-xs">
-                  0{tourStep}/04
+        <div className="fixed inset-0 z-50 bg-[#000000]/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className={`${cardBg} border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200`}>
+            <div className={`flex items-center justify-between pb-4 border-b ${borderColor}`}>
+              <div className="flex items-center gap-3">
+                <div className={`px-2 py-1 rounded-md ${isDark ? 'bg-[#333333] text-[#FFFFFF]' : 'bg-[#111111] text-[#FFFFFF]'} font-mono font-bold text-xs tracking-wider shrink-0`}>
+                  0{tourStep}/03
                 </div>
                 <h3 className="font-semibold text-sm">
-                  {tourStep === 1 && "Welcome to Git Warp! 🚀"}
-                  {tourStep === 2 && "1. Time-Machine Graph ⏳"}
-                  {tourStep === 3 && "2. Import Your Repo 📥"}
-                  {tourStep === 4 && "3. Merge Conflict Sandbox ⚡"}
+                  {tourStep === 0 && "Welcome to Git Warp! 🚀"}
+                  {tourStep === 1 && "Time-Machine Graph ⏳"}
+                  {tourStep === 2 && "Import Your Repo 📥"}
+                  {tourStep === 3 && "Merge Conflict Sandbox ⚠️"}
                 </h3>
               </div>
               <button 
                 onClick={() => setShowTour(false)}
-                className="text-[#787774] hover:text-[#111111] text-xs font-mono p-1"
+                className={`${textMuted} hover:text-[#FFFFFF] text-xs font-mono p-1`}
               >
                 ✕ Skip
               </button>
             </div>
 
-            <div className="text-xs text-[#787774] leading-relaxed space-y-2">
+            <div className={`text-xs ${textMuted} leading-relaxed space-y-2.5`}>
+              {tourStep === 0 && (
+                <>
+                  <p className={`text-${isDark ? '[#FFFFFF]' : '[#111111]'} font-medium text-sm`}>Why Git Warp?</p>
+                  <p>Developers and indie hackers often need to quickly check branch history or resolve merge conflicts without launching heavy desktop clients like SourceTree or GitKraken.</p>
+                  <p><strong>Git Warp</strong> is a lightning-fast, 100% client-side web utility. Your codebase and logs never leave your browser.</p>
+                </>
+              )}
               {tourStep === 1 && (
                 <>
-                  <p className="text-[#111111] font-medium">Зачем нужен Git Warp?</p>
-                  <p>Разработчикам и инди-хакерам часто нужно быстро посмотреть историю веток или разобраться с мерж-конфликтами, но устанавливать тяжелые десктопные клиенты (вроде SourceTree или GitKraken) долго и неудобно.</p>
-                  <p><strong>Git Warp</strong> — это легкий и мгновенный инструмент прямо в браузере. Ваши файлы и логи никогда не покидают компьютер (100% Client-Side).</p>
+                  <p className={`text-${isDark ? '[#FFFFFF]' : '[#111111]'} font-medium text-sm`}>Interactive Commit Topology</p>
+                  <p>On the main tab, you can explore visual branch topology (`main` vs `feature/stripe`).</p>
+                  <p>• Click any commit node to inspect its author, hash, and diff snapshot in the <strong>Commit Inspector</strong>.<br/>• Use the time scrubber at the bottom to simulate repository history over time.</p>
                 </>
               )}
               {tourStep === 2 && (
                 <>
-                  <p className="text-[#111111] font-medium">Интерактивный граф коммитов</p>
-                  <p>На главной вкладке вы видите визуальную топологию веток (`main` и `feature/stripe`).</p>
-                  <p>• Кликните на любой кружок-коммит, чтобы открыть <strong>Commit Inspector</strong> справа.<br/>• Используйте ползунок времени внизу, чтобы «промотать» историю назад.</p>
+                  <p className={`text-${isDark ? '[#FFFFFF]' : '[#111111]'} font-medium text-sm`}>Import Your Personal Repository</p>
+                  <p>Want to visualize your own project? Switch to the <strong>Import My Repo</strong> tab.</p>
+                  <p>Run `git log --oneline --all` in your terminal, paste the output, and Git Warp instantly renders your personal branch graph in the browser!</p>
                 </>
               )}
               {tourStep === 3 && (
                 <>
-                  <p className="text-[#111111] font-medium">Импорт вашего личного репозитория</p>
-                  <p>Хотите посмотреть граф своего реального проекта? Перейдите во вкладку <strong>Import My Repo</strong>.</p>
-                  <p>Введите простую команду в терминале своего репозитория (`git log --oneline --all`), вставьте результат в поле ввода — и Git Warp мгновенно построит красивую визуализацию ваших коммитов!</p>
-                </>
-              )}
-              {tourStep === 4 && (
-                <>
-                  <p className="text-[#111111] font-medium">Песочница мерж-конфликтов</p>
-                  <p>Боитесь конфликтов при слиянии веток? Во вкладке <strong>Conflict Sandbox</strong> показан реальный пример мерж-конфликта с маркерами (&lt;&lt;&lt;&lt;&lt;&lt; HEAD).</p>
-                  <p>Нажмите «Accept Incoming» или «Accept Current», чтобы мгновенно разрешить его и скопировать готовые команды для коммита!</p>
+                  <p className={`text-${isDark ? '[#FFFFFF]' : '[#111111]'} font-medium text-sm`}>Merge Conflict Sandbox</p>
+                  <p>Dealing with scary merge conflicts? The <strong>Conflict Sandbox</strong> tab simulates real-world conflicts with standard markers (`&lt;&lt;&lt;&lt;&lt;&lt; HEAD`).</p>
+                  <p>Click &quot;Accept Incoming&quot; or &quot;Accept Current&quot; to resolve it instantly and copy ready-to-use terminal commands!</p>
                 </>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-[#EAEAEA]">
+            <div className={`flex items-center justify-between pt-4 border-t ${borderColor}`}>
               <button 
-                onClick={() => setTourStep(Math.max(1, tourStep - 1))}
-                disabled={tourStep === 1}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md border border-[#EAEAEA] transition-colors ${tourStep === 1 ? 'opacity-40 cursor-not-allowed bg-[#F7F6F3]' : 'hover:bg-[#F7F6F3]'}`}
+                onClick={() => setTourStep(Math.max(0, tourStep - 1))}
+                disabled={tourStep === 0}
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-md border ${borderColor} transition-colors ${tourStep === 0 ? 'opacity-40 cursor-not-allowed ' + subBg : 'hover:border-[#888888]'}`}
               >
-                Назад
+                Back
               </button>
 
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map((s) => (
-                  <div key={s} className={`w-2 h-2 rounded-full ${tourStep === s ? 'bg-[#111111]' : 'bg-[#EAEAEA]'}`} />
+              <div className="flex gap-1.5">
+                {[0, 1, 2, 3].map((s) => (
+                  <div key={s} className={`w-2 h-2 rounded-full ${tourStep === s ? (isDark ? 'bg-[#FFFFFF]' : 'bg-[#111111]') : (isDark ? 'bg-[#333333]' : 'bg-[#EAEAEA]')}`} />
                 ))}
               </div>
 
-              {tourStep < 4 ? (
+              {tourStep < 3 ? (
                 <button 
                   onClick={() => setTourStep(tourStep + 1)}
-                  className="px-4 py-1.5 text-xs font-medium rounded-md bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] transition-colors"
+                  className={`px-4 py-1.5 text-xs font-medium rounded-md ${isDark ? 'bg-[#FFFFFF] text-[#111111] hover:bg-[#EAEAEA]' : 'bg-[#111111] text-[#FFFFFF] hover:bg-[#333333]'} transition-colors`}
                 >
-                  Далее
+                  Next
                 </button>
               ) : (
                 <button 
                   onClick={() => setShowTour(false)}
-                  className="px-4 py-1.5 text-xs font-medium rounded-md bg-[#346538] text-[#FFFFFF] hover:bg-[#2c5330] transition-colors"
+                  className="px-4 py-1.5 text-xs font-medium rounded-md bg-[#10B981] text-[#FFFFFF] hover:bg-[#059669] transition-colors shadow-sm"
                 >
-                  Начать работу! 🚀
+                  Get Started! 🚀
                 </button>
               )}
             </div>
@@ -268,28 +291,28 @@ export default function App() {
         {activeTab === 'visualizer' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
             {/* Left/Center: Interactive Git Graph Canvas */}
-            <div className="lg:col-span-2 bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-6 flex flex-col relative shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-              <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#EAEAEA]">
+            <div className={`${cardBg} border rounded-xl p-6 flex flex-col relative shadow-sm`}>
+              <div className={`flex items-center justify-between mb-5 pb-4 border-b ${borderColor}`}>
                 <div className="flex items-center gap-2">
-                  <GitBranch className="w-4 h-4 text-[#787774]" />
+                  <GitBranch className={`w-4 h-4 ${textMuted}`} />
                   <h2 className="text-sm font-semibold">Repository Branch Topology & History</h2>
                 </div>
                 <button 
                   onClick={() => setActiveTab('import')}
-                  className="text-xs font-mono text-[#1F6C9F] hover:underline flex items-center gap-1"
+                  className="text-xs font-mono text-[#3B82F6] hover:underline flex items-center gap-1"
                 >
                   <Upload className="w-3 h-3" /> Load custom git log
                 </button>
               </div>
 
               {/* Simulated Git Graph Canvas Area */}
-              <div className="flex-1 bg-[#FBFBFA] border border-[#EAEAEA] rounded-lg relative min-h-[420px] p-6 flex items-center justify-center overflow-hidden">
+              <div className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[420px] p-6 flex items-center justify-center overflow-hidden`}>
                 {/* SVG Connecting Lines between visible commits */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '420px' }}>
                   {visibleCommits.map((c, i) => {
                     if (i === 0) return null;
                     const prev = visibleCommits[i - 1];
-                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? '#1F6C9F' : '#346538';
+                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? '#3B82F6' : '#10B981';
                     return (
                       <line 
                         key={`line-${c.id}`}
@@ -308,7 +331,7 @@ export default function App() {
                     <path 
                       d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
                       fill="none" 
-                      stroke="#1F6C9F" 
+                      stroke="#3B82F6" 
                       strokeWidth="2.5" 
                       strokeDasharray="4" 
                     />
@@ -328,14 +351,14 @@ export default function App() {
                       >
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all ${
                           isSelected 
-                            ? 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/10' 
+                            ? (isDark ? 'bg-[#FFFFFF] border-[#FFFFFF] text-[#111111] ring-4 ring-[#FFFFFF]/10' : 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/10')
                             : c.conflict 
-                              ? 'bg-[#FDF3F2] border-[#9F2F2D] text-[#9F2F2D]' 
-                              : 'bg-[#FFFFFF] border-[#D0D0CD] text-[#111111] hover:border-[#111111]'
+                              ? (isDark ? 'bg-[#3A1D1D] border-[#EF4444] text-[#EF4444]' : 'bg-[#FDF3F2] border-[#EF4444] text-[#EF4444]') 
+                              : (isDark ? 'bg-[#222222] border-[#555555] text-[#EAEAEA] hover:border-[#FFFFFF]' : 'bg-[#FFFFFF] border-[#D0D0CD] text-[#111111] hover:border-[#111111]')
                         }`}>
                           {c.conflict ? <AlertTriangle className="w-4 h-4" /> : <GitCommit className="w-4 h-4" />}
                         </div>
-                        <div className="absolute top-10 bg-[#FFFFFF] border border-[#EAEAEA] px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 group-hover:opacity-100">
+                        <div className={`absolute top-10 ${cardBg} border px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 group-hover:opacity-100`}>
                           {c.hash} ({c.branch})
                         </div>
                       </button>
@@ -345,12 +368,12 @@ export default function App() {
               </div>
 
               {/* Time Scrubber / Simulator Slider */}
-              <div className="mt-5 pt-4 border-t border-[#EAEAEA] flex flex-col gap-2">
+              <div className={`mt-5 pt-4 border-t ${borderColor} flex flex-col gap-2`}>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-medium text-[#787774] flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5 text-[#111111]" /> Time-Machine Timeline Simulator ({visibleCommits.length} of {commits.length} commits)
+                  <span className={`font-medium ${textMuted} flex items-center gap-1.5`}>
+                    <RefreshCw className="w-3.5 h-3.5 text-current" /> Time-Machine Timeline Simulator ({visibleCommits.length} of {commits.length} commits)
                   </span>
-                  <span className="font-mono text-[#111111]">{simulatedTime}% of history</span>
+                  <span className="font-mono">{simulatedTime}% of history</span>
                 </div>
                 <input 
                   type="range" 
@@ -359,20 +382,20 @@ export default function App() {
                   step="20"
                   value={simulatedTime} 
                   onChange={(e) => setSimulatedTime(Number(e.target.value))}
-                  className="w-full accent-[#111111] cursor-pointer"
+                  className="w-full cursor-pointer accent-[#3B82F6]"
                 />
               </div>
             </div>
 
             {/* Right: Commit Inspector Panel */}
-            <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-6 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+            <div className={`${cardBg} border rounded-xl p-6 flex flex-col justify-between shadow-sm`}>
               <div>
-                <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA] mb-4">
+                <div className={`flex items-center justify-between pb-4 border-b ${borderColor} mb-4`}>
                   <div className="flex items-center gap-2">
-                    <Terminal className="w-4 h-4 text-[#787774]" />
+                    <Terminal className={`w-4 h-4 ${textMuted}`} />
                     <h2 className="text-sm font-semibold">Commit Inspector</h2>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F7F6F3] border border-[#EAEAEA] text-[#787774]">
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${subBg} border ${borderColor} ${textMuted}`}>
                     {selectedCommit?.branch}
                   </span>
                 </div>
@@ -380,52 +403,52 @@ export default function App() {
                 {selectedCommit ? (
                   <div className="space-y-4 text-xs">
                     <div>
-                      <span className="text-[#787774] block mb-1">Commit Hash & Author</span>
-                      <div className="font-mono bg-[#F7F6F3] p-2.5 rounded border border-[#EAEAEA] flex items-center justify-between">
-                        <span>{selectedCommit.hash} — <strong className="text-[#111111]">{selectedCommit.author}</strong></span>
+                      <span className={`${textMuted} block mb-1`}>Commit Hash & Author</span>
+                      <div className={`font-mono ${subBg} p-2.5 rounded border ${borderColor} flex items-center justify-between`}>
+                        <span>{selectedCommit.hash} — <strong className={isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'}>{selectedCommit.author}</strong></span>
                         <button 
                           onClick={() => handleCopyCommand(`git checkout ${selectedCommit.hash}`)}
-                          className="text-[#787774] hover:text-[#111111] transition-colors p-1"
+                          className={`${textMuted} hover:text-current transition-colors p-1`}
                           title="Copy git checkout command"
                         >
-                          {copied ? <Check className="w-3.5 h-3.5 text-[#346538]" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copied ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-[#787774] block mb-1">Commit Message</span>
-                      <p className="font-medium text-[#111111] bg-[#F7F6F3] p-2.5 rounded border border-[#EAEAEA]">
+                      <span className={`${textMuted} block mb-1`}>Commit Message</span>
+                      <p className={`font-medium ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'} ${subBg} p-2.5 rounded border ${borderColor}`}>
                         {selectedCommit.message}
                       </p>
                     </div>
 
                     <div>
-                      <span className="text-[#787774] block mb-1">Simulated Code Diff Snapshot</span>
-                      <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded font-mono text-[11px] leading-relaxed overflow-x-auto space-y-1">
+                      <span className={`${textMuted} block mb-1`}>Simulated Code Diff Snapshot</span>
+                      <div className="bg-[#000000] text-[#EAEAEA] p-3 rounded font-mono text-[11px] leading-relaxed overflow-x-auto space-y-1 border border-[#333333]">
                         <div className="text-[#787774]">// repository state at {selectedCommit.hash}</div>
-                        <div className="text-[#346538]">+ export function initWarpSession() &#123;</div>
-                        <div className="text-[#346538]">+   console.log("Warp loaded successfully");</div>
-                        <div className="text-[#346538]">+ &#125;</div>
-                        <div className="text-[#9F2F2D]">- // legacy wrapper removed</div>
+                        <div className="text-[#10B981]">+ export function initWarpSession() &#123;</div>
+                        <div className="text-[#10B981]">+   console.log("Warp loaded successfully");</div>
+                        <div className="text-[#10B981]">+ &#125;</div>
+                        <div className="text-[#EF4444]">- // legacy wrapper removed</div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-[#787774] italic">Select a commit node from the graph to inspect.</p>
+                  <p className={`text-xs ${textMuted} italic`}>Select a commit node from the graph to inspect.</p>
                 )}
               </div>
 
               {/* Quick Checkout CLI Helper */}
-              <div className="mt-6 pt-4 border-t border-[#EAEAEA]">
-                <span className="text-[11px] text-[#787774] block mb-2">Quick Checkout Command</span>
-                <div className="bg-[#F7F6F3] border border-[#EAEAEA] p-2.5 rounded flex items-center justify-between font-mono text-xs">
-                  <span className="text-[#111111] truncate">git checkout {selectedCommit?.hash}</span>
+              <div className={`mt-6 pt-4 border-t ${borderColor}`}>
+                <span className={`text-[11px] ${textMuted} block mb-2`}>Quick Checkout Command</span>
+                <div className={`${subBg} border ${borderColor} p-2.5 rounded flex items-center justify-between font-mono text-xs`}>
+                  <span className="truncate">git checkout {selectedCommit?.hash}</span>
                   <button 
                     onClick={() => handleCopyCommand(`git checkout ${selectedCommit?.hash}`)}
-                    className="ml-2 bg-[#111111] text-[#FFFFFF] px-2.5 py-1 rounded text-[10px] hover:bg-[#333333] transition-colors flex items-center gap-1 shrink-0"
+                    className={`ml-2 ${isDark ? 'bg-[#FFFFFF] text-[#111111] hover:bg-[#EAEAEA]' : 'bg-[#111111] text-[#FFFFFF] hover:bg-[#333333]'} px-2.5 py-1 rounded text-[10px] transition-colors flex items-center gap-1 shrink-0`}
                   >
-                    {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                    {copied ? <><Check className="w-3 h-3 text-[#10B981]" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                 </div>
               </div>
@@ -434,23 +457,23 @@ export default function App() {
         )}
 
         {activeTab === 'import' && (
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-3xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+          <div className={`${cardBg} border rounded-xl p-8 max-w-3xl mx-auto w-full shadow-sm`}>
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-[#1F6C9F]/10 text-[#1F6C9F] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#3B82F6]/10 text-[#3B82F6] flex items-center justify-center">
                 <Upload className="w-4 h-4" />
               </div>
               <div>
                 <h2 className="text-base font-semibold">Import Your Own Git Repository Log</h2>
-                <p className="text-xs text-[#787774]">Visualize your personal project history instantly in the browser.</p>
+                <p className={`text-xs ${textMuted}`}>Visualize your personal project history instantly in the browser.</p>
               </div>
             </div>
 
             <div className="space-y-4 mt-6">
               <div>
-                <label className="block text-xs font-medium text-[#787774] mb-1.5">
+                <label className={`block text-xs font-medium ${textMuted} mb-1.5`}>
                   Step 1: Run this command in your local terminal inside any git repo:
                 </label>
-                <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded font-mono text-xs flex items-center justify-between">
+                <div className="bg-[#000000] text-[#EAEAEA] p-3 rounded font-mono text-xs flex items-center justify-between border border-[#333333]">
                   <span>git log --oneline --all -n 25</span>
                   <button 
                     onClick={() => handleCopyCommand('git log --oneline --all -n 25')}
@@ -462,7 +485,7 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#787774] mb-1.5">
+                <label className={`block text-xs font-medium ${textMuted} mb-1.5`}>
                   Step 2: Paste the output below:
                 </label>
                 <textarea 
@@ -470,19 +493,19 @@ export default function App() {
                   value={rawLogInput}
                   onChange={(e) => setRawLogInput(e.target.value)}
                   placeholder="e.g.&#10;a1b2c3d Fix authentication token expiry bug&#10;e4f5g6h Merge pull request #12 from main&#10;7j8k9l0 Add initial dashboard layout"
-                  className="w-full bg-[#F7F6F3] border border-[#EAEAEA] rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#111111]"
+                  className={`w-full ${subBg} border ${borderColor} rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#888888]`}
                 />
               </div>
 
               {importError && (
-                <div className="p-3 bg-[#FDF3F2] border border-[#9F2F2D]/20 text-[#9F2F2D] rounded-lg text-xs">
+                <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] rounded-lg text-xs">
                   {importError}
                 </div>
               )}
 
               <button 
                 onClick={handleParseGitLog}
-                className="w-full py-2.5 bg-[#111111] text-[#FFFFFF] rounded-lg text-xs font-medium hover:bg-[#333333] transition-colors shadow-sm"
+                className={`w-full py-2.5 ${isDark ? 'bg-[#FFFFFF] text-[#111111] hover:bg-[#EAEAEA]' : 'bg-[#111111] text-[#FFFFFF] hover:bg-[#333333]'} rounded-lg text-xs font-medium transition-colors shadow-sm`}
               >
                 Parse & Visualize Git Topology
               </button>
@@ -491,35 +514,35 @@ export default function App() {
         )}
 
         {activeTab === 'conflict' && (
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-4xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#EAEAEA]">
+          <div className={`${cardBg} border rounded-xl p-8 max-w-4xl mx-auto w-full shadow-sm`}>
+            <div className={`flex items-center justify-between mb-6 pb-4 border-b ${borderColor}`}>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#9F2F2D]/10 text-[#9F2F2D] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[#EF4444]/10 text-[#EF4444] flex items-center justify-center">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
                   <h2 className="text-base font-semibold">Interactive Merge Conflict Sandbox</h2>
-                  <p className="text-xs text-[#787774]">Simulate resolving real-world git conflicts without touching the command line.</p>
+                  <p className={`text-xs ${textMuted}`}>Simulate resolving real-world git conflicts without touching the command line.</p>
                 </div>
               </div>
-              <span className={`text-xs font-mono px-3 py-1 rounded-full border ${conflictResolved ? 'bg-[#346538]/10 text-[#346538] border-[#346538]/20' : 'bg-[#9F2F2D]/10 text-[#9F2F2D] border-[#9F2F2D]/20'}`}>
+              <span className={`text-xs font-mono px-3 py-1 rounded-full border ${conflictResolved ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20' : 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20'}`}>
                 {conflictResolved ? 'Conflict Resolved ✓' : 'Conflict Active (HEAD vs feature/stripe)'}
               </span>
             </div>
 
             <div className="space-y-6">
               {/* Conflict Code Block */}
-              <div className="bg-[#111111] text-[#EAEAEA] rounded-lg p-4 font-mono text-xs space-y-2 overflow-x-auto shadow-inner">
+              <div className="bg-[#000000] text-[#EAEAEA] rounded-lg p-4 font-mono text-xs space-y-2 overflow-x-auto shadow-inner border border-[#333333]">
                 <div className="text-[#787774]">// file: src/services/payment.ts</div>
                 <div>export async function processCheckout(cartId: string) &#123;</div>
                 
                 {conflictResolved ? (
-                  <div className="bg-[#346538]/20 p-2 rounded border border-[#346538]/40 text-[#A8D5BA]">
+                  <div className="bg-[#10B981]/20 p-2 rounded border border-[#10B981]/40 text-[#A8D5BA]">
                     &nbsp;&nbsp;return await StripeClient.charges.create(&#123; amount: 1500, currency: 'usd' &#125;);
                   </div>
                 ) : (
                   <>
-                    <div className="bg-[#9F2F2D]/20 p-2 rounded border border-[#9F2F2D]/40 text-[#F5B7B1] space-y-1">
+                    <div className="bg-[#EF4444]/20 p-2 rounded border border-[#EF4444]/40 text-[#F5B7B1] space-y-1">
                       <div>&lt;&lt;&lt;&lt;&lt;&lt;&nbsp;HEAD (main branch)</div>
                       <div>&nbsp;&nbsp;return await LocalGateway.charge(cartId);</div>
                       <div>=======</div>
@@ -537,29 +560,29 @@ export default function App() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button 
                     onClick={() => setConflictResolved(true)}
-                    className="p-4 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] hover:bg-[#FFFFFF] hover:border-[#111111] transition-all text-left group"
+                    className={`p-4 rounded-lg border ${borderColor} ${subBg} hover:bg-[${isDark ? '#262626' : '#FFFFFF'}] hover:border-[#888888] transition-all text-left group`}
                   >
-                    <span className="text-xs font-semibold block text-[#111111] mb-1 group-hover:underline">Accept Incoming (feature/stripe)</span>
-                    <span className="text-[11px] text-[#787774] block">Keep Stripe charges implementation and discard HEAD changes.</span>
+                    <span className={`text-xs font-semibold block ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'} mb-1 group-hover:underline`}>Accept Incoming (feature/stripe)</span>
+                    <span className={`text-[11px] ${textMuted} block`}>Keep Stripe charges implementation and discard HEAD changes.</span>
                   </button>
 
                   <button 
                     onClick={() => setConflictResolved(true)}
-                    className="p-4 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] hover:bg-[#FFFFFF] hover:border-[#111111] transition-all text-left group"
+                    className={`p-4 rounded-lg border ${borderColor} ${subBg} hover:bg-[${isDark ? '#262626' : '#FFFFFF'}] hover:border-[#888888] transition-all text-left group`}
                   >
-                    <span className="text-xs font-semibold block text-[#111111] mb-1 group-hover:underline">Accept Current (HEAD)</span>
-                    <span className="text-[11px] text-[#787774] block">Keep LocalGateway charge implementation and discard incoming.</span>
+                    <span className={`text-xs font-semibold block ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'} mb-1 group-hover:underline`}>Accept Current (HEAD)</span>
+                    <span className={`text-[11px] ${textMuted} block`}>Keep LocalGateway charge implementation and discard incoming.</span>
                   </button>
                 </div>
               ) : (
-                <div className="bg-[#F7F6F3] p-5 rounded-lg border border-[#EAEAEA] flex items-center justify-between">
+                <div className={`${subBg} p-5 rounded-lg border ${borderColor} flex items-center justify-between`}>
                   <div>
-                    <h3 className="text-xs font-semibold text-[#111111] mb-0.5">Conflict successfully resolved!</h3>
-                    <p className="text-[11px] text-[#787774]">Run the following commands in your terminal to commit the resolution:</p>
+                    <h3 className={`text-xs font-semibold ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'} mb-0.5`}>Conflict successfully resolved!</h3>
+                    <p className={`text-[11px] ${textMuted}`}>Run the following commands in your terminal to commit the resolution:</p>
                   </div>
                   <button 
                     onClick={() => setConflictResolved(false)}
-                    className="px-3 py-1.5 bg-[#FFFFFF] border border-[#EAEAEA] hover:border-[#111111] text-xs font-medium rounded-md transition-colors"
+                    className={`px-3 py-1.5 ${cardBg} border ${borderColor} hover:border-[#888888] text-xs font-medium rounded-md transition-colors`}
                   >
                     Reset Sandbox
                   </button>
@@ -567,13 +590,13 @@ export default function App() {
               )}
 
               {conflictResolved && (
-                <div className="bg-[#111111] text-[#EAEAEA] p-3 rounded-lg font-mono text-xs flex items-center justify-between">
+                <div className="bg-[#000000] text-[#EAEAEA] p-3 rounded-lg font-mono text-xs flex items-center justify-between border border-[#333333]">
                   <span>git add . ; git commit -m "fix: resolve merge conflict with stripe gateway"</span>
                   <button 
                     onClick={() => handleCopyCommand('git add . ; git commit -m "fix: resolve merge conflict with stripe gateway"')}
                     className="bg-[#333333] hover:bg-[#444444] text-[#FFFFFF] px-2.5 py-1 rounded text-[10px] transition-colors flex items-center gap-1"
                   >
-                    {copied ? <><Check className="w-3 h-3 text-[#A8D5BA]" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                    {copied ? <><Check className="w-3 h-3 text-[#10B981]" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                 </div>
               )}
@@ -582,29 +605,29 @@ export default function App() {
         )}
 
         {activeTab === 'docs' && (
-          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-xl p-8 max-w-3xl mx-auto w-full shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6">
+          <div className={`${cardBg} border rounded-xl p-8 max-w-3xl mx-auto w-full shadow-sm space-y-6`}>
             <div>
               <h2 className="text-base font-semibold mb-1">Git Warp Documentation & CLI Guides</h2>
-              <p className="text-xs text-[#787774]">Master frictionless Git visualization and conflict resolution.</p>
+              <p className={`text-xs ${textMuted}`}>Master frictionless Git visualization and conflict resolution.</p>
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="p-4 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] space-y-2">
-                <h3 className="font-semibold text-[#111111]">1. Exporting Your Git Log</h3>
-                <p className="text-[#787774]">To inspect any private repository, run the following command in your terminal and paste the output into the <strong>Import My Repo</strong> tab:</p>
-                <div className="bg-[#111111] text-[#EAEAEA] p-2.5 rounded font-mono text-[11px]">
+              <div className={`p-4 rounded-lg ${subBg} border ${borderColor} space-y-2`}>
+                <h3 className={`font-semibold ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'}`}>1. Exporting Your Git Log</h3>
+                <p className={textMuted}>To inspect any private repository, run the following command in your terminal and paste the output into the <strong>Import My Repo</strong> tab:</p>
+                <div className="bg-[#000000] text-[#EAEAEA] p-2.5 rounded font-mono text-[11px] border border-[#333333]">
                   git log --oneline --all -n 30 --graph
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] space-y-2">
-                <h3 className="font-semibold text-[#111111]">2. Privacy & Security</h3>
-                <p className="text-[#787774]">Git Warp is a 100% client-side Single Page Application (SPA). Your code, logs, and commit messages never leave your browser memory and are never transmitted to external servers.</p>
+              <div className={`p-4 rounded-lg ${subBg} border ${borderColor} space-y-2`}>
+                <h3 className={`font-semibold ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'}`}>2. Privacy & Security</h3>
+                <p className={textMuted}>Git Warp is a 100% client-side Single Page Application (SPA). Your code, logs, and commit messages never leave your browser memory and are never transmitted to external servers.</p>
               </div>
 
-              <div className="p-4 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] space-y-2">
-                <h3 className="font-semibold text-[#111111]">3. Built for Indie Hackers</h3>
-                <p className="text-[#787774]">Designed with a Premium Utilitarian Minimalism aesthetic (Linear / Vercel style) to solve daily friction without heavy desktop software.</p>
+              <div className={`p-4 rounded-lg ${subBg} border ${borderColor} space-y-2`}>
+                <h3 className={`font-semibold ${isDark ? 'text-[#FFFFFF]' : 'text-[#111111]'}`}>3. Built for Indie Hackers</h3>
+                <p className={textMuted}>Designed with a Premium Utilitarian Minimalism aesthetic (Linear / Vercel style) to solve daily friction without heavy desktop software.</p>
               </div>
             </div>
           </div>
@@ -612,7 +635,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#EAEAEA] bg-[#FFFFFF] px-8 py-4 text-center text-xs text-[#787774] flex items-center justify-between">
+      <footer className={`border-t ${bgHeader} px-8 py-4 text-center text-xs ${textMuted} flex items-center justify-between`}>
         <span>Git Warp © 2026 — Zero-dependency client-side Git history topology</span>
         <span className="font-mono text-[11px]">v1.0.0-stable</span>
       </footer>
