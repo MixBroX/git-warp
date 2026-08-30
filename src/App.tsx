@@ -203,9 +203,10 @@ export default function App() {
     setPan({ x: newPanX, y: newPanY });
   };
 
-  // Mouse wheel zoom handler (zooms into / away from mouse cursor)
+  // Mouse wheel zoom handler (zooms into / away from mouse cursor and prevents window scroll)
   const handleWheelCanvas = (e: React.WheelEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     
