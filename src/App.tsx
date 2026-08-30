@@ -185,11 +185,43 @@ export default function App() {
     setDraggingNodeId(null);
   };
 
-  // Mouse wheel zoom handler
+  // Zoom in/out from container center (for UI buttons)
+  const handleZoomCenter = (zoomIn: boolean) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const zoomFactor = zoomIn ? 1.2 : 0.8;
+    const newZoom = Math.max(0.5, Math.min(3, zoom * zoomFactor));
+
+    // Adjust pan so the center stays centered
+    const newPanX = centerX - (centerX - pan.x) * (newZoom / zoom);
+    const newPanY = centerY - (centerY - pan.y) * (newZoom / zoom);
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  };
+
+  // Mouse wheel zoom handler (zooms into / away from mouse cursor)
   const handleWheelCanvas = (e: React.WheelEvent) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-    setZoom(prevZoom => Math.max(0.5, Math.min(3, prevZoom * zoomFactor)));
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    
+    // Mouse position relative to container
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+    const newZoom = Math.max(0.5, Math.min(3, zoom * zoomFactor));
+
+    // Adjust pan so point under mouse remains fixed
+    const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
+    const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
   };
 
   // Theme color variables mapping
@@ -383,16 +415,16 @@ export default function App() {
                 {/* Map Zoom & Reset Controls */}
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setZoom(prev => Math.min(3, prev + 0.25))}
+                    onClick={() => handleZoomCenter(true)}
                     className={`p-1.5 rounded ${subBg} border ${borderColor} hover:border-[#888888] transition-colors`}
-                    title="Zoom In"
+                    title="Zoom In (Center)"
                   >
                     <ZoomIn className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => setZoom(prev => Math.max(0.5, prev - 0.25))}
+                    onClick={() => handleZoomCenter(false)}
                     className={`p-1.5 rounded ${subBg} border ${borderColor} hover:border-[#888888] transition-colors`}
-                    title="Zoom Out"
+                    title="Zoom Out (Center)"
                   >
                     <ZoomOut className="w-3.5 h-3.5" />
                   </button>
