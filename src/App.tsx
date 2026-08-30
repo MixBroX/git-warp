@@ -66,6 +66,36 @@ export default function App() {
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Attach non-passive wheel listener to prevent page scrolling when zooming map
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheelNative = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = el.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+      setZoom(prevZoom => {
+        const newZoom = Math.max(0.5, Math.min(3, prevZoom * zoomFactor));
+        setPan(prevPan => ({
+          x: mouseX - (mouseX - prevPan.x) * (newZoom / prevZoom),
+          y: mouseY - (mouseY - prevPan.y) * (newZoom / prevZoom)
+        }));
+        return newZoom;
+      });
+    };
+
+    el.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheelNative);
+    };
+  }, []);
+
   const handleCopyCommand = (cmd: string) => {
     navigator.clipboard.writeText(cmd);
     setCopied(true);
@@ -198,28 +228,6 @@ export default function App() {
     // Adjust pan so the center stays centered
     const newPanX = centerX - (centerX - pan.x) * (newZoom / zoom);
     const newPanY = centerY - (centerY - pan.y) * (newZoom / zoom);
-
-    setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
-  };
-
-  // Mouse wheel zoom handler (zooms into / away from mouse cursor and prevents window scroll)
-  const handleWheelCanvas = (e: React.WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    
-    // Mouse position relative to container
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
-    const newZoom = Math.max(0.5, Math.min(3, zoom * zoomFactor));
-
-    // Adjust pan so point under mouse remains fixed
-    const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
-    const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
 
     setZoom(newZoom);
     setPan({ x: newPanX, y: newPanY });
@@ -446,7 +454,6 @@ export default function App() {
                 onMouseMove={handleMouseMoveCanvas}
                 onMouseUp={handleMouseUpCanvas}
                 onMouseLeave={handleMouseUpCanvas}
-                onWheel={handleWheelCanvas}
                 style={{ touchAction: 'none' }}
                 className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[460px] overflow-hidden cursor-grab active:cursor-grabbing select-none`}
               >
