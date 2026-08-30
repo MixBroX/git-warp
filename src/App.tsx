@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   GitBranch, 
   GitCommit, 
@@ -6,15 +6,16 @@ import {
   Copy, 
   Check, 
   ExternalLink,
-  Layers,
   Terminal,
-  ShieldCheck,
   Zap,
   RefreshCw,
   Upload,
-  FileText,
   Sun,
-  Moon
+  Moon,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Move
 } from 'lucide-react';
 
 interface CommitNode {
@@ -23,8 +24,8 @@ interface CommitNode {
   message: string;
   author: string;
   branch: string;
-  x: number;
-  y: number;
+  x: number; // percentage or pixels
+  y: number; // percentage or pixels
   conflict?: boolean;
 }
 
@@ -55,6 +56,16 @@ export default function App() {
   const [rawLogInput, setRawLogInput] = useState('');
   const [importError, setImportError] = useState('');
 
+  // ==================== INTERACTIVE MAP / CANVAS STATE ====================
+  const [zoom, setZoom] = useState<number>(1);
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Node dragging state
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const handleCopyCommand = (cmd: string) => {
     navigator.clipboard.writeText(cmd);
     setCopied(true);
@@ -78,19 +89,12 @@ export default function App() {
       
       lines.forEach((line, index) => {
         const cleanLine = line.replace(/^[|\*\/\-\s]+/, '');
-        
-        // Let's parse git log formats like:
-        // 1. `a1b2c3d Author Name: Commit message`
-        // 2. `a1b2c3d (Author Name) Commit message`
-        // 3. Standard `a1b2c3d Commit message`
-        
         const parts = cleanLine.split(' ');
         const hash = parts[0] && parts[0].length >= 7 ? parts[0] : Math.random().toString(36).substring(2, 9);
         
         let author = 'GitUser';
         let message = parts.slice(1).join(' ');
 
-        // Check if second part contains colon or parenthesis (e.g. "Alex:" or "(Alex)")
         if (parts.length > 2) {
           const secondPart = parts[1];
           if (secondPart.endsWith(':')) {
@@ -111,7 +115,7 @@ export default function App() {
         
         const isBranchB = line.toLowerCase().includes('feature') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('branch');
         const totalLines = Math.max(lines.length, 1);
-        const xPos = Math.round(10 + (index / Math.max(totalLines - 1, 1)) * 80);
+        const xPos = Math.round(15 + (index / Math.max(totalLines - 1, 1)) * 70);
         const yPos = isBranchB ? 75 : 35;
 
         parsedCommits.push({
@@ -132,6 +136,8 @@ export default function App() {
         setActiveTab('visualizer');
         setSimulatedTime(100);
         setImportError('');
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
       } else {
         setImportError('Could not parse any commits. Ensure you use `git log --oneline` format.');
       }
@@ -140,7 +146,53 @@ export default function App() {
     }
   };
 
-  // Theme color variables mapping (Strict monochrome utilitarian minimalism)
+  // Canvas Mouse / Touch Handlers for Panning
+  const handleMouseDownCanvas = (e: React.MouseEvent) => {
+    // If clicking directly on container background or SVG, start canvas pan
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).closest('button')) {
+      return; // Do not pan if clicking buttons
+    }
+    setIsDraggingCanvas(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMoveCanvas = (e: React.MouseEvent) => {
+    if (draggingNodeId) {
+      // Dragging a specific commit node
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      // Calculate relative position within container taking zoom and pan into account
+      const clickX = (e.clientX - rect.left - pan.x) / zoom;
+      const clickY = (e.clientY - rect.top - pan.y) / zoom;
+      
+      // Convert to percentage (assuming 800x420 reference or similar)
+      const xPct = Math.max(5, Math.min(95, (clickX / rect.width) * 100));
+      const yPct = Math.max(15, Math.min(85, (clickY / rect.height) * 100));
+
+      setCommits(prev => prev.map(c => c.id === draggingNodeId ? { ...c, x: xPct, y: yPct } : c));
+      return;
+    }
+
+    if (!isDraggingCanvas) return;
+    setPan({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUpCanvas = () => {
+    setIsDraggingCanvas(false);
+    setDraggingNodeId(null);
+  };
+
+  // Mouse wheel zoom handler
+  const handleWheelCanvas = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+    setZoom(prevZoom => Math.max(0.5, Math.min(3, prevZoom * zoomFactor)));
+  };
+
+  // Theme color variables mapping
   const isDark = theme === 'dark';
   const bgMain = isDark ? 'bg-[#111111] text-[#EAEAEA]' : 'bg-[#F7F6F3] text-[#111111]';
   const bgHeader = isDark ? 'bg-[#1A1A1A] border-[#333333]' : 'bg-[#FFFFFF] border-[#EAEAEA]';
@@ -161,7 +213,7 @@ export default function App() {
             <h1 className="font-semibold text-sm tracking-tight">
               Git Warp — Browser Git Topology & Conflict Resolver
             </h1>
-            <p className={`text-xs ${textMuted} mt-0.5`}>Visualize branch history instantly & resolve merge conflicts without heavy desktop clients</p>
+            <p className={`text-xs ${textMuted} mt-0.5`}>Interactive 2D git topology with pan, zoom & node dragging</p>
           </div>
         </div>
 
@@ -235,7 +287,7 @@ export default function App() {
                 </div>
                 <h3 className="font-semibold text-sm">
                   {tourStep === 0 && "Welcome to Git Warp! 🚀"}
-                  {tourStep === 1 && "Time-Machine Graph ⏳"}
+                  {tourStep === 1 && "Interactive 2D Topology (Pan, Zoom, Drag) 🗺️"}
                   {tourStep === 2 && "Import Your Repo 📥"}
                   {tourStep === 3 && "Merge Conflict Sandbox ⚠️"}
                 </h3>
@@ -258,9 +310,8 @@ export default function App() {
               )}
               {tourStep === 1 && (
                 <>
-                  <p className={`text-${isDark ? '[#FFFFFF]' : '[#111111]'} font-medium text-sm`}>Interactive Commit Topology</p>
-                  <p>On the main tab, you can explore visual branch topology (`main` vs `feature/stripe`).</p>
-                  <p>• Click any commit node to inspect its author, hash, and diff snapshot in the <strong>Commit Inspector</strong>.<br/>• Use the time scrubber at the bottom to simulate repository history over time.</p>
+                  <p className={`text-${isDark ? '[#FFFFFF]' : '[#111111]'} font-medium text-sm`}>Fully Interactive Map</p>
+                  <p>• <strong>Pan:</strong> Click and drag anywhere on the map background to move around.<br/>• <strong>Zoom:</strong> Use the Zoom controls (+ / - / Reset) or mouse scroll wheel.<br/>• <strong>Drag Nodes:</strong> Click and drag any commit node to rearrange the topology layout!</p>
                 </>
               )}
               {tourStep === 2 && (
@@ -320,78 +371,130 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left/Center: Interactive Git Graph Canvas */}
             <div className={`${cardBg} border rounded-xl p-6 flex flex-col relative shadow-sm lg:col-span-2`}>
-              <div className={`flex items-center justify-between mb-5 pb-4 border-b ${borderColor}`}>
+              <div className={`flex items-center justify-between mb-4 pb-4 border-b ${borderColor}`}>
                 <div className="flex items-center gap-2">
                   <GitBranch className={`w-4 h-4 ${textMuted}`} />
-                  <h2 className="text-sm font-semibold">Repository Branch Topology & History</h2>
+                  <div>
+                    <h2 className="text-sm font-semibold">Interactive Repository Topology</h2>
+                    <p className={`text-[11px] ${textMuted}`}>Pan (drag background), Zoom (scroll/buttons), or Drag Nodes</p>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => setActiveTab('import')}
-                  className={`text-xs font-mono ${isDark ? 'text-[#EAEAEA]' : 'text-[#111111]'} hover:underline flex items-center gap-1`}
-                >
-                  <Upload className="w-3 h-3" /> Load custom git log
-                </button>
+
+                {/* Map Zoom & Reset Controls */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setZoom(prev => Math.min(3, prev + 0.25))}
+                    className={`p-1.5 rounded ${subBg} border ${borderColor} hover:border-[#888888] transition-colors`}
+                    title="Zoom In"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setZoom(prev => Math.max(0.5, prev - 0.25))}
+                    className={`p-1.5 rounded ${subBg} border ${borderColor} hover:border-[#888888] transition-colors`}
+                    title="Zoom Out"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+                    className={`p-1.5 rounded ${subBg} border ${borderColor} hover:border-[#888888] transition-colors flex items-center gap-1 px-2.5 text-[11px] font-mono`}
+                    title="Reset View"
+                  >
+                    <RotateCcw className="w-3 h-3" /> {Math.round(zoom * 100)}%
+                  </button>
+                </div>
               </div>
 
-              {/* Simulated Git Graph Canvas Area */}
-              <div className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[420px] p-6 flex items-center justify-center overflow-hidden`}>
-                {/* SVG Connecting Lines between visible commits */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '420px' }}>
-                  {visibleCommits.map((c, i) => {
-                    if (i === 0) return null;
-                    const prev = visibleCommits[i - 1];
-                    const strokeColor = c.branch.includes('stripe') || c.y === 75 ? (isDark ? '#888888' : '#555555') : (isDark ? '#FFFFFF' : '#111111');
-                    return (
-                      <line 
-                        key={`line-${c.id}`}
-                        x1={`${prev.x}%`} 
-                        y1={`${prev.y}%`} 
-                        x2={`${c.x}%`} 
-                        y2={`${c.y}%`} 
-                        stroke={strokeColor} 
+              {/* Simulated Git Graph Canvas Area with Pan & Zoom */}
+              <div 
+                ref={containerRef}
+                onMouseDown={handleMouseDownCanvas}
+                onMouseMove={handleMouseMoveCanvas}
+                onMouseUp={handleMouseUpCanvas}
+                onMouseLeave={handleMouseUpCanvas}
+                onWheel={handleWheelCanvas}
+                className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[460px] overflow-hidden cursor-grab active:cursor-grabbing select-none`}
+              >
+                {/* Transform Wrapper for Pan & Zoom */}
+                <div 
+                  className="absolute inset-0 w-full h-full transition-transform duration-75 ease-out"
+                  style={{
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                    transformOrigin: '0 0'
+                  }}
+                >
+                  {/* SVG Connecting Lines between visible commits */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: '460px', minWidth: '100%' }}>
+                    {visibleCommits.map((c, i) => {
+                      if (i === 0) return null;
+                      const prev = visibleCommits[i - 1];
+                      const strokeColor = c.branch.includes('stripe') || c.y === 75 ? (isDark ? '#888888' : '#555555') : (isDark ? '#FFFFFF' : '#111111');
+                      return (
+                        <line 
+                          key={`line-${c.id}`}
+                          x1={`${prev.x}%`} 
+                          y1={`${prev.y}%`} 
+                          x2={`${c.x}%`} 
+                          y2={`${c.y}%`} 
+                          stroke={strokeColor} 
+                          strokeWidth="2.5" 
+                          strokeDasharray={c.branch !== prev.branch ? "4" : undefined}
+                        />
+                      );
+                    })}
+                    {/* Branch connector curve */}
+                    {visibleCommits.some(c => c.y === 75) && visibleCommits.some(c => c.y === 35 && c.x === 42) && (
+                      <path 
+                        d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
+                        fill="none" 
+                        stroke={isDark ? '#888888' : '#555555'} 
                         strokeWidth="2.5" 
-                        strokeDasharray={c.branch !== prev.branch ? "4" : undefined}
+                        strokeDasharray="4" 
                       />
-                    );
-                  })}
-                  {/* Branch branch connector if both main and feature exist */}
-                  {visibleCommits.some(c => c.y === 75) && visibleCommits.some(c => c.y === 35 && c.x === 42) && (
-                    <path 
-                      d="M 42% 35% C 42% 55%, 42% 55%, 42% 75%" 
-                      fill="none" 
-                      stroke={isDark ? '#888888' : '#555555'} 
-                      strokeWidth="2.5" 
-                      strokeDasharray="4" 
-                    />
-                  )}
-                </svg>
+                    )}
+                  </svg>
 
-                {/* Commit Nodes */}
-                <div className="absolute inset-0 p-6">
-                  {visibleCommits.map((c) => {
-                    const isSelected = selectedCommit?.id === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => setSelectedCommit(c)}
-                        style={{ left: `${c.x}%`, top: `${c.y}%` }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110 focus:outline-none z-10"
-                      >
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all ${
-                          isSelected 
-                            ? (isDark ? 'bg-[#FFFFFF] border-[#FFFFFF] text-[#111111] ring-4 ring-[#FFFFFF]/10' : 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/10')
-                            : c.conflict 
-                              ? (isDark ? 'bg-[#3A1D1D] border-[#EF4444] text-[#EF4444]' : 'bg-[#FDF3F2] border-[#EF4444] text-[#EF4444]') 
-                              : (isDark ? 'bg-[#222222] border-[#555555] text-[#EAEAEA] hover:border-[#FFFFFF]' : 'bg-[#FFFFFF] border-[#D0D0CD] text-[#111111] hover:border-[#111111]')
-                        }`}>
-                          {c.conflict ? <AlertTriangle className="w-4 h-4" /> : <GitCommit className="w-4 h-4" />}
+                  {/* Commit Nodes */}
+                  <div className="absolute inset-0 p-6">
+                    {visibleCommits.map((c) => {
+                      const isSelected = selectedCommit?.id === c.id;
+                      return (
+                        <div
+                          key={c.id}
+                          style={{ left: `${c.x}%`, top: `${c.y}%` }}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
+                        >
+                          <button
+                            onClick={() => setSelectedCommit(c)}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setDraggingNodeId(c.id);
+                              setSelectedCommit(c);
+                            }}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-md transition-transform hover:scale-110 cursor-pointer focus:outline-none ${
+                              isSelected 
+                                ? (isDark ? 'bg-[#FFFFFF] border-[#FFFFFF] text-[#111111] ring-4 ring-[#FFFFFF]/15' : 'bg-[#111111] border-[#111111] text-[#FFFFFF] ring-4 ring-[#111111]/15')
+                                : c.conflict 
+                                  ? (isDark ? 'bg-[#3A1D1D] border-[#EF4444] text-[#EF4444]' : 'bg-[#FDF3F2] border-[#EF4444] text-[#EF4444]') 
+                                  : (isDark ? 'bg-[#222222] border-[#777777] text-[#EAEAEA] hover:border-[#FFFFFF]' : 'bg-[#FFFFFF] border-[#B0B0AC] text-[#111111] hover:border-[#111111]')
+                            }`}
+                            title={`Drag node or click to inspect (${c.hash})`}
+                          >
+                            {c.conflict ? <AlertTriangle className="w-4 h-4" /> : <GitCommit className="w-4 h-4" />}
+                          </button>
+                          <div className={`absolute top-11 left-1/2 -translate-x-1/2 ${cardBg} border px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 pointer-events-none`}>
+                            {c.hash} <span className={textMuted}>({c.branch})</span>
+                          </div>
                         </div>
-                        <div className={`absolute top-10 ${cardBg} border px-2 py-0.5 rounded shadow-sm text-[10px] font-mono whitespace-nowrap opacity-90 group-hover:opacity-100`}>
-                          {c.hash} ({c.branch})
-                        </div>
-                      </button>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Canvas hint overlay */}
+                <div className="absolute bottom-3 left-3 bg-[#000000]/60 backdrop-blur-xs text-[#EAEAEA] px-2.5 py-1 rounded text-[10px] font-mono flex items-center gap-1.5 pointer-events-none">
+                  <Move className="w-3 h-3 text-[#F59E0B]" /> Drag canvas to pan • Scroll to zoom • Drag nodes to reposition
                 </div>
               </div>
 
