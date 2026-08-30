@@ -290,7 +290,7 @@ export default function App() {
 
           <button 
             onClick={() => { setShowTour(true); setTourStep(0); }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
+            className={`flex items-center gap-1.5 px-3.5 h-[34px] text-xs font-medium rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
             title="Launch Interactive Tour"
           >
             <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
@@ -299,7 +299,7 @@ export default function App() {
 
           <button 
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            className={`p-2 rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
+            className={`flex items-center justify-center w-[34px] h-[34px] rounded-md ${subBg} border ${borderColor} hover:border-[#888888] transition-colors shadow-sm`}
             title="Toggle Light / Dark Mode"
           >
             {isDark ? <Sun className="w-4 h-4 text-[#F59E0B]" /> : <Moon className="w-4 h-4" />}
@@ -309,7 +309,7 @@ export default function App() {
             href="https://github.com/MixBroX/git-warp" 
             target="_blank" 
             rel="noreferrer"
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md ${isDark ? 'bg-[#FFFFFF] text-[#111111] hover:bg-[#EAEAEA]' : 'bg-[#111111] text-[#FFFFFF] hover:bg-[#333333]'} transition-colors shadow-sm`}
+            className={`flex items-center gap-1.5 px-3.5 h-[34px] text-xs font-medium rounded-md ${isDark ? 'bg-[#FFFFFF] text-[#111111] hover:bg-[#EAEAEA]' : 'bg-[#111111] text-[#FFFFFF] hover:bg-[#333333]'} transition-colors shadow-sm`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
             GitHub
