@@ -447,6 +447,7 @@ export default function App() {
                 onMouseUp={handleMouseUpCanvas}
                 onMouseLeave={handleMouseUpCanvas}
                 onWheel={handleWheelCanvas}
+                style={{ touchAction: 'none' }}
                 className={`flex-1 ${isDark ? 'bg-[#141414]' : 'bg-[#FBFBFA]'} border ${borderColor} rounded-lg relative min-h-[460px] overflow-hidden cursor-grab active:cursor-grabbing select-none`}
               >
                 {/* Transform Wrapper for Pan & Zoom */}
